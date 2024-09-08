@@ -2,6 +2,7 @@ const std = @import("std");
 const raylib = @import("raylib.zig");
 const Level = @import("Level.zig");
 const Tilemap = @import("Tilemap.zig");
+const Tileset = @import("Tileset.zig");
 
 const game_name = "Zig Dungeon";
 const game_width = 480;
@@ -17,10 +18,15 @@ pub fn main() !void {
 
     defer raylib.CloseWindow();
 
+    //var buffer: [10000]u8 = undefined;
+    //var fba = std.heap.FixedBufferAllocator.init(&buffer);
+    //const allocator = fba.allocator();
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    const tilemap = try Tilemap.initFromPngFile("Levels/Level1.png", &arena);
-    var render_image = raylib.GenImageColor(game_width, game_height, raylib.BLUE);
     defer arena.deinit();
+
+    const tileset = try Tileset.initFromSpriteSheet("Sprites/Tilesets/Biome1Tileset.png", &arena);
+    const tilemap = try Tilemap.initFromPngFile("Levels/Level1.png", tileset, &arena);
+    var render_image = raylib.GenImageColor(game_width, game_height, raylib.BLUE);
 
     const game_rect = raylib.Rectangle{ .x = 0, .y = 0, .width = game_width, .height = game_height };
     const window_rect = raylib.Rectangle{ .x = 0, .y = 0, .width = window_width, .height = window_height };
@@ -30,7 +36,7 @@ pub fn main() !void {
         defer raylib.EndDrawing();
 
         raylib.ClearBackground(background_color);
-        tilemap.drawToTexture(&render_image);
+        try tilemap.draw(&render_image);
         const render_texture = raylib.LoadTextureFromImage(render_image);
         raylib.DrawTexturePro(render_texture, game_rect, window_rect, raylib.Vector2{ .x = 0, .y = 0 }, 0.0, raylib.WHITE);
     }
