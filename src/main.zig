@@ -2,6 +2,7 @@ const std = @import("std");
 const raylib = @import("raylib.zig");
 const Level = @import("Level.zig");
 const Tilemap = @import("Tilemap.zig");
+const Actor = @import("Actor.zig");
 const Tileset = @import("Tileset.zig");
 const Vector = @import("Vector.zig");
 const Rect = @import("Rect.zig");
@@ -27,12 +28,15 @@ pub fn main() !void {
     defer raylib.CloseWindow();
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
+    var level = try Level.init("Levels/Level1.png", "sprites/Tilesets/Biome1Tileset.png", &arena);
+    defer level.deinit();
 
-    const tileset = try Tileset.initFromSpriteSheet("Sprites/Tilesets/Biome1Tileset.png", &arena);
-    var tilemap = try Tilemap.initFromPngFile("Levels/Level1.png", tileset, &arena);
+    try level.actors.append(Actor.init(
+        "sprites/character/Character.png",
+        Tilemap.Cell{ .x = 0, .y = 0 },
+    ));
 
-    tilemap.center(game_rect);
+    level.tilemap.center(game_rect);
 
     // Setup the render texture, where the whole game is going to be drawn to
     const render_texture = raylib.LoadRenderTexture(game_width, game_height);
@@ -42,7 +46,7 @@ pub fn main() !void {
     while (!raylib.WindowShouldClose()) {
         raylib.BeginTextureMode(render_texture);
         raylib.ClearBackground(background_color);
-        try tilemap.draw();
+        try level.draw();
         raylib.EndTextureMode();
 
         raylib.BeginDrawing();
