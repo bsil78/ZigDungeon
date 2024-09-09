@@ -1,9 +1,14 @@
 const std = @import("std");
 const raylib = @import("raylib.zig");
+const Tileset = @import("Tileset.zig");
+const Vector = @import("Vector.zig");
+const Rect = @import("Rect.zig");
 const Tilemap = @This();
+
 const ArrayList = std.ArrayList;
 const ArenaAllocator = std.heap.ArenaAllocator;
-const Tileset = @import("Tileset.zig");
+const Vector2 = Vector.Vector2;
+const Rect2 = Rect.Rect2;
 
 const TileTypes = enum(u16) {
     Wall,
@@ -12,6 +17,7 @@ const TileTypes = enum(u16) {
 
 const tile_size = 16;
 
+position: Vector2 = Vector.Vector2Zero,
 tileset: Tileset,
 tiles: ArrayList(TileTypes) = undefined,
 grid_width: u32 = 0,
@@ -47,27 +53,36 @@ pub fn print(self: Tilemap) void {
     std.debug.print("\n", .{});
 }
 
-pub fn draw(self: Tilemap, target_image: *raylib.struct_Image) !void {
-    const image_w: c_int = @intCast(self.grid_width * self.tileset.tile_width);
-    const image_h: c_int = @intCast(self.grid_height * self.tileset.tile_height);
-    const image_rect = raylib.struct_Rectangle{ .x = 0.0, .y = 0.0, .width = @floatFromInt(image_w), .height = @floatFromInt(image_h) };
-    var render_image = raylib.GenImageColor(image_w, image_h, raylib.BLACK);
-
+pub fn draw(self: Tilemap) !void {
     for (self.tiles.items, 0..) |tile, i| {
-        const row: c_int = @intCast(i % self.grid_width);
-        const col: c_int = @intCast(i / self.grid_width);
-        const w: c_int = @intCast(self.tileset.tile_width);
-        const h: c_int = @intCast(self.tileset.tile_height);
-        const x = row * w;
-        const y = col * h;
-        const tile_index = @intFromEnum(tile);
-        const tile_image = try self.tileset.getTileImage(tile_index);
+        const row: f32 = @floatFromInt(i % self.grid_width);
+        const col: f32 = @floatFromInt(i / self.grid_width);
+        const w: f32 = @floatFromInt(self.tileset.tile_width);
+        const h: f32 = @floatFromInt(self.tileset.tile_height);
+        const pos = Vector2{ .x = self.position.x + row * w, .y = self.position.y + col * h };
+        const tile_index: usize = @intCast(@intFromEnum(tile));
 
-        const tile_rect = raylib.struct_Rectangle{ .x = 0.0, .y = 0.0, .width = @floatFromInt(w), .height = @floatFromInt(h) };
-        const dest_rect = raylib.struct_Rectangle{ .x = @floatFromInt(x), .y = @floatFromInt(y), .width = @floatFromInt(w), .height = @floatFromInt(h) };
-
-        raylib.ImageDraw(&render_image, tile_image, tile_rect, dest_rect, raylib.WHITE);
+        try self.tileset.drawTile(tile_index, pos);
     }
+}
 
-    raylib.ImageDraw(target_image, render_image, image_rect, image_rect, raylib.WHITE);
+pub fn getRect(self: Tilemap) Rect2 {
+    const tile_width: f32 = @floatFromInt(self.tileset.tile_width);
+    const tile_height: f32 = @floatFromInt(self.tileset.tile_height);
+    const grid_width: f32 = @floatFromInt(self.grid_width);
+    const grid_height: f32 = @floatFromInt(self.grid_height);
+
+    return Rect2{
+        .x = self.position.x,
+        .y = self.position.y,
+        .width = grid_width * tile_width,
+        .height = grid_height * tile_height,
+    };
+}
+
+pub fn center(self: *Tilemap, container_rect: Rect2) void {
+    const rect = self.getRect();
+    const centered_rect = Rect.centerRect(container_rect, rect);
+
+    self.position = Rect.getRectPosition(centered_rect);
 }
