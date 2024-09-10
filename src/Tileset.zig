@@ -12,8 +12,8 @@ const Vector2 = Vector.Vector2;
 
 const TileError = error{OutOfBound};
 
-tile_width: u32 = 16,
-tile_height: u32 = 16,
+tile_width: u32 = 32,
+tile_height: u32 = 32,
 sprite_sheet: Texture,
 tiles: ArrayList(Tile),
 

@@ -15,12 +15,7 @@ const TileTypes = enum(u16) {
     Ground,
 };
 
-pub const Cell = struct {
-    x: u16,
-    y: u16,
-};
-
-pub const tile_size = 16;
+pub const tile_size = 32;
 
 position: Vector2 = Vector.Vector2Zero,
 tileset: Tileset,
