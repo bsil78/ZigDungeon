@@ -25,3 +25,7 @@ pub fn add(a: Cell, b: Cell) Cell {
         .y = a.y + b.y,
     };
 }
+
+pub fn equal(a: Cell, b: Cell) bool {
+    return a.x == b.x and a.y == b.y;
+}

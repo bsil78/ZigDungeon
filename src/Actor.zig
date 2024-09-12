@@ -17,5 +17,4 @@ pub fn init(texture_path: []const u8, cell: Cell) Actor {
 
 pub fn move(self: *Actor, dest_cell: Cell) void {
     self.cell = dest_cell;
-    //std.debug.print("moved to x:{d} y:{d}\n", .{ dest_cell.x, dest_cell.y });
 }

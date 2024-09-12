@@ -17,7 +17,7 @@ const TileType = enum(u16) {
     Void,
 };
 
-const TilemapError = error{OutOfBound};
+pub const TilemapError = error{OutOfBound};
 
 pub const tile_size = 32;
 
@@ -118,4 +118,10 @@ fn getTileId(self: Tilemap, cell: Cell) TilemapError!usize {
     }
 
     return @intCast(id);
+}
+
+pub fn tileExist(self: Tilemap, cell: Cell) bool {
+    const width: i16 = @intCast(self.grid_width);
+    const id = cell.y * width + cell.x;
+    return id >= self.tiles.items.len;
 }

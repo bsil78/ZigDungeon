@@ -36,6 +36,10 @@ pub fn draw(self: Level) !void {
     try self.drawActors();
 }
 
+pub fn addEnemy(self: *Level, enemy: *Actor) !void {
+    try self.enemies.append(enemy);
+}
+
 fn drawActors(self: Level) !void {
     for (self.enemies.items) |actor| {
         self.drawActor(actor);
@@ -59,9 +63,27 @@ pub fn input(self: Level, inputs: Inputs) !void {
     const dir: Cell = Cell.fromVec(inputs.getDirection());
     const dest_cell = Cell.add(self.character.cell, dir);
 
-    if (try self.tilemap.isCellWalkable(dest_cell)) {
+    if (try self.tilemap.isCellWalkable(dest_cell) and try self.isCellFree(dest_cell)) {
         self.character.move(dest_cell);
     } else {
         return LevelError.UnreachableTile;
     }
+}
+
+fn isCellFree(self: Level, cell: Cell) Tilemap.TilemapError!bool {
+    if (self.tilemap.tileExist(cell)) {
+        return Tilemap.TilemapError.OutOfBound;
+    }
+
+    if (Cell.equal(self.character.cell, cell)) {
+        return false;
+    }
+
+    for (self.enemies.items) |enemy| {
+        if (Cell.equal(enemy.cell, cell)) {
+            return false;
+        }
+    }
+
+    return true;
 }

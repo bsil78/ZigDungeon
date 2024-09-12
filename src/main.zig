@@ -29,7 +29,9 @@ pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
 
     var character = Actor.init("sprites/character/Character.png", Cell{ .x = 1, .y = 1 });
+    var enemy = Actor.init("sprites/character/Enemy.png", Cell{ .x = 14, .y = 14 });
     var level = try Level.init("Levels/Level1.png", "sprites/tilesets/Biome1Tileset.png", &character, &arena);
+    try level.addEnemy(&enemy);
     defer level.deinit();
 
     level.tilemap.center(window_rect);
@@ -42,7 +44,7 @@ pub fn main() !void {
         const inputs = Inputs.read();
 
         level.input(inputs) catch {
-            std.debug.print("Cannot go this way", .{});
+            std.debug.print("Cannot go this way\n", .{});
         };
 
         if (inputs.hasAction()) {
