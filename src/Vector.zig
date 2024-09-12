@@ -14,10 +14,3 @@ pub const CardinalDirections = Vector2[4]{
     Vector2Left,
     Vector2Up,
 };
-
-pub fn vecToCell(vec: Vector2) Cell {
-    return Cell{
-        .x = @intFromFloat(vec.x),
-        .y = @intFromFloat(vec.y),
-    };
-}

@@ -40,7 +40,10 @@ pub fn main() !void {
 
     while (!raylib.WindowShouldClose()) {
         const inputs = Inputs.read();
-        level.character.input(inputs);
+
+        level.input(inputs) catch {
+            std.debug.print("Cannot go this way", .{});
+        };
 
         if (inputs.hasAction()) {
             inputs.print();

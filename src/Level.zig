@@ -3,10 +3,14 @@ const raylib = @import("raylib.zig");
 const Tilemap = @import("Tilemap.zig");
 const Tileset = @import("Tileset.zig");
 const Actor = @import("Actor.zig");
+const Inputs = @import("Inputs.zig");
+const Cell = @import("Cell.zig");
 const Level = @This();
 
 const ArenaAllocator = std.heap.ArenaAllocator;
 const ArrayList = std.ArrayList;
+
+const LevelError = error{UnreachableTile};
 
 arena: ArenaAllocator,
 tilemap: Tilemap,
@@ -45,4 +49,19 @@ fn drawActor(self: Level, actor: *Actor) void {
     const x: c_int = level_x + actor.cell.x * Tilemap.tile_size;
     const y: c_int = level_y + actor.cell.y * Tilemap.tile_size;
     raylib.DrawTexture(actor.texture, x, y, raylib.WHITE);
+}
+
+pub fn input(self: Level, inputs: Inputs) !void {
+    if (!inputs.hasAction()) {
+        return;
+    }
+
+    const dir: Cell = Cell.fromVec(inputs.getDirection());
+    const dest_cell = Cell.add(self.character.cell, dir);
+
+    if (try self.tilemap.isCellWalkable(dest_cell)) {
+        self.character.move(dest_cell);
+    } else {
+        return LevelError.UnreachableTile;
+    }
 }
