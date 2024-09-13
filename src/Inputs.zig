@@ -32,16 +32,16 @@ pub fn isActionPressed(self: Inputs, action: Action) bool {
     return ((self.action & @intFromEnum(action)) != 0);
 }
 
-pub fn getDirection(self: Inputs) Vector2 {
+pub fn getDirection(self: Inputs) Vector2(f32) {
     const right: i4 = @intCast(@intFromBool(self.isActionPressed(Action.move_right)));
     const left: i4 = @intCast(@intFromBool(self.isActionPressed(Action.move_left)));
     const up: i4 = @intCast(@intFromBool(self.isActionPressed(Action.move_up)));
     const down: i4 = @intCast(@intFromBool(self.isActionPressed(Action.move_down)));
 
-    return Vector2{
-        .x = @floatFromInt(right - left),
-        .y = @floatFromInt(down - up),
-    };
+    return Vector2(f32).init(
+        @floatFromInt(right - left),
+        @floatFromInt(down - up),
+    );
 }
 
 pub fn print(self: Inputs) void {

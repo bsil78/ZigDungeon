@@ -2,14 +2,12 @@ const std = @import("std");
 const raylib = @import("raylib.zig");
 const Tileset = @import("Tileset.zig");
 const Vector = @import("Vector.zig");
-const Rect = @import("Rect.zig");
-const Cell = @import("Cell.zig");
+const Rect = @import("Rect.zig").Rect;
 const Tilemap = @This();
 
 const ArrayList = std.ArrayList;
 const ArenaAllocator = std.heap.ArenaAllocator;
 const Vector2 = Vector.Vector2;
-const Rect2 = Rect.Rect2;
 
 const TileType = enum(u16) {
     Wall,
@@ -21,7 +19,7 @@ pub const TilemapError = error{OutOfBound};
 
 pub const tile_size = 32;
 
-position: Vector2 = Vector.Vector2Zero,
+position: Vector2(f32) = Vector2(f32).Zero(),
 tileset: Tileset,
 tiles: ArrayList(TileType) = undefined,
 grid_width: u32 = 0,
@@ -65,7 +63,7 @@ pub fn draw(self: Tilemap) !void {
         const col: f32 = @floatFromInt(i / self.grid_width);
         const w: f32 = @floatFromInt(self.tileset.tile_width);
         const h: f32 = @floatFromInt(self.tileset.tile_height);
-        const pos = Vector2{ .x = self.position.x + row * w, .y = self.position.y + col * h };
+        const pos = Vector2(f32).init(self.position.x + row * w, self.position.y + col * h);
         const tile_index: usize = @intCast(@intFromEnum(tile));
 
         try self.tileset.drawTile(tile_index, pos);
@@ -73,29 +71,29 @@ pub fn draw(self: Tilemap) !void {
 }
 
 // Get the rect in pixels encapsulating of all the tiles in the tilemap
-pub fn getRect(self: Tilemap) Rect2 {
+pub fn getRect(self: Tilemap) Rect(f32) {
     const tile_width: f32 = @floatFromInt(self.tileset.tile_width);
     const tile_height: f32 = @floatFromInt(self.tileset.tile_height);
     const grid_width: f32 = @floatFromInt(self.grid_width);
     const grid_height: f32 = @floatFromInt(self.grid_height);
 
-    return Rect2{
-        .x = self.position.x,
-        .y = self.position.y,
-        .width = grid_width * tile_width,
-        .height = grid_height * tile_height,
-    };
+    return Rect(f32).init(
+        self.position.x,
+        self.position.y,
+        grid_width * tile_width,
+        grid_height * tile_height,
+    );
 }
 
 // Move this Tilemap so it is centered inside the given container rect
-pub fn center(self: *Tilemap, container_rect: Rect2) void {
+pub fn center(self: *Tilemap, container_rect: Rect(f32)) void {
     const rect = self.getRect();
-    const centered_rect = Rect.centerRect(container_rect, rect);
+    const centered_rect = rect.centerRect(container_rect);
 
-    self.position = Rect.getRectPosition(centered_rect);
+    self.position = centered_rect.getRectPosition();
 }
 
-pub fn isCellWalkable(self: Tilemap, cell: Cell) TilemapError!bool {
+pub fn isCellWalkable(self: Tilemap, cell: Vector2(i16)) TilemapError!bool {
     const tile_type = try self.getTile(cell);
 
     return switch (tile_type) {
@@ -104,12 +102,12 @@ pub fn isCellWalkable(self: Tilemap, cell: Cell) TilemapError!bool {
     };
 }
 
-pub fn getTile(self: Tilemap, cell: Cell) TilemapError!TileType {
+pub fn getTile(self: Tilemap, cell: Vector2(i16)) TilemapError!TileType {
     const tile_id = try self.getTileId(cell);
     return self.tiles.items[tile_id];
 }
 
-fn getTileId(self: Tilemap, cell: Cell) TilemapError!usize {
+fn getTileId(self: Tilemap, cell: Vector2(i16)) TilemapError!usize {
     const width: i16 = @intCast(self.grid_width);
     const id = cell.y * width + cell.x;
 
@@ -120,7 +118,7 @@ fn getTileId(self: Tilemap, cell: Cell) TilemapError!usize {
     return @intCast(id);
 }
 
-pub fn tileExist(self: Tilemap, cell: Cell) bool {
+pub fn tileExist(self: Tilemap, cell: Vector2(i16)) bool {
     const width: i16 = @intCast(self.grid_width);
     const id = cell.y * width + cell.x;
     return id >= self.tiles.items.len;

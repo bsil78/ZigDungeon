@@ -2,25 +2,49 @@ const raylib = @import("raylib.zig");
 const Vector = @import("Vector.zig");
 const Vector2 = Vector.Vector2;
 
-pub const Rect2 = raylib.struct_Rectangle;
+pub fn Rect(T: type) type {
+    return struct {
+        x: T,
+        y: T,
+        w: T,
+        h: T,
 
-pub fn centerRect(container_rect: Rect2, rect: Rect2) Rect2 {
-    return Rect2{
-        .x = container_rect.x + (container_rect.width / 2.0) - (rect.width / 2.0),
-        .y = container_rect.y + (container_rect.height / 2.0) - (rect.height / 2.0),
-        .width = rect.width,
-        .height = rect.height,
+        pub fn init(x: T, y: T, w: T, h: T) Rect(T) {
+            return .{ .x = x, .y = y, .w = w, .h = h };
+        }
+
+        pub fn initV(pos: Vector2(T), size: Vector2(T)) Rect(T) {
+            return .{ .x = pos.x, .y = pos.y, .w = size.w, .h = size.h };
+        }
+
+        pub fn centerRect(self: Rect(T), container_rect: Rect(T)) Rect(T) {
+            return Rect(T).init(
+                container_rect.x + (container_rect.w / 2.0) - (self.w / 2.0),
+                container_rect.y + (container_rect.h / 2.0) - (self.h / 2.0),
+                self.w,
+                self.h,
+            );
+        }
+
+        pub fn flipRectY(self: Rect(T)) Rect(T) {
+            return Rect(T).init(self.x, self.y, self.w, -self.h);
+        }
+
+        pub fn getRectPosition(self: Rect(T)) Vector2(T) {
+            return Vector2(T).init(self.x, self.y);
+        }
+
+        pub fn getRectSize(self: Rect(T)) Vector2(T) {
+            return Vector2(T).init(self.w, self.h);
+        }
+
+        pub fn toRaylib(self: Rect(T)) raylib.Rectangle {
+            return raylib.Rectangle{
+                .x = self.x,
+                .y = self.y,
+                .width = self.w,
+                .height = self.h,
+            };
+        }
     };
-}
-
-pub fn flipRectY(rect: Rect2) Rect2 {
-    return Rect2{ .x = rect.x, .y = rect.y, .width = rect.width, .height = -rect.height };
-}
-
-pub fn getRectPosition(rect: Rect2) Vector2 {
-    return Vector2{ .x = rect.x, .y = rect.y };
-}
-
-pub fn getRectSize(rect: Rect2) Vector2 {
-    return Vector2{ .x = rect.width, .y = rect.height };
 }

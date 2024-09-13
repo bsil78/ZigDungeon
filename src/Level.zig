@@ -4,7 +4,8 @@ const Tilemap = @import("Tilemap.zig");
 const Tileset = @import("Tileset.zig");
 const Actor = @import("Actor.zig");
 const Inputs = @import("Inputs.zig");
-const Cell = @import("Cell.zig");
+const Vector = @import("Vector.zig");
+const Vector2 = Vector.Vector2;
 const Level = @This();
 
 const ArenaAllocator = std.heap.ArenaAllocator;
@@ -60,8 +61,8 @@ pub fn input(self: Level, inputs: Inputs) !void {
         return;
     }
 
-    const dir: Cell = Cell.fromVec(inputs.getDirection());
-    const dest_cell = Cell.add(self.character.cell, dir);
+    const dir: Vector2(f32) = inputs.getDirection();
+    const dest_cell = self.character.cell.add(dir.intFromFloat(i16));
 
     if (try self.tilemap.isCellWalkable(dest_cell) and try self.isCellFree(dest_cell)) {
         self.character.move(dest_cell);
@@ -70,17 +71,17 @@ pub fn input(self: Level, inputs: Inputs) !void {
     }
 }
 
-fn isCellFree(self: Level, cell: Cell) Tilemap.TilemapError!bool {
+fn isCellFree(self: Level, cell: Vector2(i16)) Tilemap.TilemapError!bool {
     if (self.tilemap.tileExist(cell)) {
         return Tilemap.TilemapError.OutOfBound;
     }
 
-    if (Cell.equal(self.character.cell, cell)) {
+    if (cell.equal(self.character.cell)) {
         return false;
     }
 
     for (self.enemies.items) |enemy| {
-        if (Cell.equal(enemy.cell, cell)) {
+        if (cell.equal(enemy.cell)) {
             return false;
         }
     }

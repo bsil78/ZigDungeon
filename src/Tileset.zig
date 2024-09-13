@@ -1,13 +1,12 @@
 const std = @import("std");
 const raylib = @import("raylib.zig");
 const Vector = @import("Vector.zig");
-const Rect = @import("Rect.zig");
+const Rect = @import("Rect.zig").Rect;
 const Tileset = @This();
 
 const Texture = raylib.struct_Texture;
 const ArrayList = std.ArrayList;
 const ArenaAllocator = std.heap.ArenaAllocator;
-const Rect2 = Rect.Rect2;
 const Vector2 = Vector.Vector2;
 
 const TileError = error{OutOfBound};
@@ -23,18 +22,18 @@ const Tile = struct {
     width: f32,
     height: f32,
 
-    fn getRect(self: Tile) Rect2 {
-        return Rect2{
-            .x = self.sheet_x,
-            .y = self.sheet_y,
-            .width = self.width,
-            .height = self.height,
-        };
+    fn getRect(self: Tile) Rect(f32) {
+        return Rect(f32).init(
+            self.sheet_x,
+            self.sheet_y,
+            self.width,
+            self.height,
+        );
     }
 
-    pub fn draw(self: Tile, sprite_sheet: Texture, pos: Vector2) void {
-        const rect = self.getRect();
-        raylib.DrawTextureRec(sprite_sheet, rect, pos, raylib.WHITE);
+    pub fn draw(self: Tile, sprite_sheet: Texture, pos: Vector2(f32)) void {
+        const rect = self.getRect().toRaylib();
+        raylib.DrawTextureRec(sprite_sheet, rect, pos.toRaylib(), raylib.WHITE);
     }
 };
 
@@ -58,7 +57,7 @@ pub fn initFromSpriteSheet(png_file_path: []const u8, arena: *ArenaAllocator) !T
             const y: f32 = @floatFromInt(row * tileset.tile_height);
             const w: f32 = @floatFromInt(tileset.tile_width);
             const h: f32 = @floatFromInt(tileset.tile_height);
-            const rect = Rect2{ .x = x, .y = y, .width = w, .height = h };
+            const rect = Rect(f32).init(x, y, w, h).toRaylib();
             const tile_image = raylib.ImageFromImage(sprite_sheet_image, rect);
             defer raylib.UnloadImage(tile_image);
             const alpha_border = raylib.GetImageAlphaBorder(tile_image, 0.01);
@@ -81,7 +80,7 @@ pub fn initFromSpriteSheet(png_file_path: []const u8, arena: *ArenaAllocator) !T
     return tileset;
 }
 
-pub fn drawTile(self: Tileset, tile_id: usize, pos: Vector2) !void {
+pub fn drawTile(self: Tileset, tile_id: usize, pos: Vector2(f32)) !void {
     if (tile_id >= self.tiles.items.len) {
         return TileError.OutOfBound;
     }

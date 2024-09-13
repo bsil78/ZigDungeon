@@ -5,11 +5,9 @@ const Tilemap = @import("Tilemap.zig");
 const Actor = @import("Actor.zig");
 const Tileset = @import("Tileset.zig");
 const Vector = @import("Vector.zig");
-const Rect = @import("Rect.zig");
-const Cell = @import("Cell.zig");
+const Rect = @import("Rect.zig").Rect;
 const Inputs = @import("Inputs.zig");
 
-const Rect2 = Rect.Rect2;
 const Vector2 = Vector.Vector2;
 
 const game_name = "Zig Dungeon";
@@ -19,7 +17,7 @@ const target_fps = 60;
 const background_color = raylib.BLACK;
 
 pub fn main() !void {
-    const window_rect = Rect2{ .x = 0, .y = 0, .width = window_width, .height = window_height };
+    const window_rect = Rect(f32).init(0, 0, window_width, window_height);
 
     raylib.InitWindow(window_width, window_height, game_name);
     raylib.SetTargetFPS(target_fps);
@@ -28,8 +26,8 @@ pub fn main() !void {
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
 
-    var character = Actor.init("sprites/character/Character.png", Cell{ .x = 1, .y = 1 });
-    var enemy = Actor.init("sprites/character/Enemy.png", Cell{ .x = 14, .y = 14 });
+    var character = Actor.init("sprites/character/Character.png", Vector2(i16).One());
+    var enemy = Actor.init("sprites/character/Enemy.png", Vector2(i16).initOneValue(14));
     var level = try Level.init("Levels/Level1.png", "sprites/tilesets/Biome1Tileset.png", &character, &arena);
     try level.addEnemy(&enemy);
     defer level.deinit();
@@ -58,7 +56,14 @@ pub fn main() !void {
         raylib.EndTextureMode();
 
         raylib.BeginDrawing();
-        raylib.DrawTexturePro(render_texture.texture, Rect.flipRectY(window_rect), window_rect, Vector.Vector2Zero, 0.0, raylib.WHITE);
+        raylib.DrawTexturePro(
+            render_texture.texture,
+            window_rect.flipRectY().toRaylib(),
+            window_rect.toRaylib(),
+            Vector2(f32).Zero().toRaylib(),
+            0.0,
+            raylib.WHITE,
+        );
         raylib.EndDrawing();
     }
 }
