@@ -26,10 +26,11 @@ pub fn main() !void {
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
 
-    var character = Actor.init("sprites/character/Character.png", Vector2(i16).One());
-    var enemy = Actor.init("sprites/character/Enemy.png", Vector2(i16).initOneValue(14));
-    var level = try Level.init("Levels/Level1.png", "sprites/tilesets/Biome1Tileset.png", &character, &arena);
-    try level.addEnemy(&enemy);
+    var character = try Actor.init("sprites/character/Character.png", Vector2(i16).One(), arena.allocator());
+    var enemy = try Actor.init("sprites/character/Enemy.png", Vector2(i16).initOneValue(14), arena.allocator());
+    var level = try Level.init("Levels/Level1.png", "sprites/tilesets/Biome1Tileset.png", &arena);
+    try level.addActor(Level.ActorType.Character, &character);
+    try level.addActor(Level.ActorType.Enemy, &enemy);
     defer level.deinit();
 
     level.tilemap.center(window_rect);
