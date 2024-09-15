@@ -38,8 +38,10 @@ pub fn damage(self: *Actor, amount: u16) void {
     self.hp -= amount;
 
     if (self.hp == 0) {
-        //self.die();
+        self.die();
     }
 }
 
-//fn die(self: *Actor) void {}
+fn die(self: *Actor) void {
+    self.event_emitter.emit(ActorEvents.Died);
+}

@@ -29,7 +29,7 @@ pub fn hasAction(self: Inputs) bool {
 }
 
 pub fn isActionPressed(self: Inputs, action: Action) bool {
-    return ((self.action & @intFromEnum(action)) != 0);
+    return ((self.action & @intFromEnum(action)) != 0x00);
 }
 
 pub fn getDirection(self: Inputs) Vector2(f32) {

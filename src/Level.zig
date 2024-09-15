@@ -21,6 +21,12 @@ tilemap: Tilemap,
 characters: ArrayList(*Actor),
 enemies: ArrayList(*Actor),
 
+const ActorContext = struct {
+    level: *Level,
+    actor_type: ActorType,
+    actor: *Actor,
+};
+
 pub fn init(level_png_path: []const u8, sprite_sheet_path: []const u8, arena: *ArenaAllocator) !Level {
     const tileset = try Tileset.initFromSpriteSheet(sprite_sheet_path, arena);
     return Level{
@@ -48,8 +54,8 @@ pub fn addActor(self: *Level, actor_type: ActorType, actor: *Actor) !void {
 
     try array.append(actor);
 
-    const context = .{ .self = self, .actor_type = actor_type, .actor = actor };
-    const callback = Callback.init(@TypeOf(context), onActorDied, context);
+    var context = ActorContext{ .level = self, .actor_type = actor_type, .actor = actor };
+    const callback = Callback.init(ActorContext, onActorDied, &context);
     try actor.event_emitter.subscribe(Actor.ActorEvents.Died, callback);
 }
 
@@ -120,7 +126,7 @@ fn isCellFree(self: Level, cell: Vector2(i16)) Tilemap.TilemapError!bool {
     return true;
 }
 
-fn onActorDied(context: struct { self: *Level, actor_type: ActorType, actor: *Actor }) void {
-    context.self.removeActor(context.actor_type, context.actor);
-    std.debug.print("Actor died", .{});
+fn onActorDied(context: *ActorContext) !void {
+    try context.level.removeActor(context.actor_type, context.actor);
+    std.debug.print("Actor of type {s} died", .{@tagName(context.actor_type)});
 }
