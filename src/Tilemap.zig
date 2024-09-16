@@ -3,10 +3,10 @@ const raylib = @import("raylib.zig");
 const Tileset = @import("Tileset.zig");
 const Vector = @import("Vector.zig");
 const Rect = @import("Rect.zig").Rect;
+const Allocator = std.mem.Allocator;
 const Tilemap = @This();
 
 const ArrayList = std.ArrayList;
-const ArenaAllocator = std.heap.ArenaAllocator;
 const Vector2 = Vector.Vector2;
 
 const TileType = enum(u16) {
@@ -25,11 +25,11 @@ tiles: ArrayList(TileType) = undefined,
 grid_width: u32 = 0,
 grid_height: u32 = 0,
 
-pub fn initFromPngFile(file_path: []const u8, tileset: Tileset, arena: *ArenaAllocator) !Tilemap {
+pub fn initFromPngFile(file_path: []const u8, tileset: Tileset, allocator: Allocator) !Tilemap {
     const image = raylib.LoadImage(file_path.ptr);
     var tilemap = Tilemap{ .tileset = tileset };
 
-    tilemap.tiles = ArrayList(TileType).init(arena.allocator());
+    tilemap.tiles = ArrayList(TileType).init(allocator);
     tilemap.grid_height = @intCast(image.height);
     tilemap.grid_width = @intCast(image.width);
 

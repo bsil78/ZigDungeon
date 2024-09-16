@@ -3,6 +3,7 @@ const Callback = @import("Callback.zig");
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const HashMap = std.AutoHashMap;
+const Level = @import("Level.zig");
 const Self = @This();
 
 pub fn EventEmitter(EventEnum: type) type {
@@ -43,16 +44,18 @@ pub fn EventEmitter(EventEnum: type) type {
         }
 
         pub fn emit(self: *This, event: EventEnum) !void {
+            std.debug.print("emit event: {s}\n", .{@tagName(event)});
             const callbacks_array = self.getCallbacksArray(event).?;
 
-            for (callbacks_array) |callback| {
-                callback.call();
+            for (callbacks_array.items) |*callback| {
+                std.debug.print("callback called\n", .{});
+                try callback.call();
             }
         }
 
-        fn getCallbacksArray(self: *This, event: EventEnum) ?ArrayList(Callback) {
+        fn getCallbacksArray(self: *This, event: EventEnum) ?*ArrayList(Callback) {
             const key = @intFromEnum(event);
-            return self.listeners.get(key);
+            return self.listeners.getPtr(key);
         }
     };
 }

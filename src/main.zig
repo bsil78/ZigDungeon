@@ -24,14 +24,18 @@ pub fn main() !void {
 
     defer raylib.CloseWindow();
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    // create our general purpose allocator
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
-    var character = try Actor.init("sprites/character/Character.png", Vector2(i16).One(), arena.allocator());
-    var enemy = try Actor.init("sprites/character/Enemy.png", Vector2(i16).initOneValue(14), arena.allocator());
-    var level = try Level.init("Levels/Level1.png", "sprites/tilesets/Biome1Tileset.png", &arena);
-    try level.addActor(Level.ActorType.Character, &character);
-    try level.addActor(Level.ActorType.Enemy, &enemy);
-    defer level.deinit();
+    // get an std.mem.Allocator from it
+    const allocator = gpa.allocator();
+
+    var character = try Actor.init("sprites/character/Character.png", Vector2(i16).One(), Actor.ActorType.Character, allocator);
+    var enemy = try Actor.init("sprites/character/Enemy.png", Vector2(i16).init(2, 1), Actor.ActorType.Enemy, allocator);
+
+    var level = try Level.init("Levels/Level1.png", "sprites/tilesets/Biome1Tileset.png", allocator);
+    try level.addActor(&character);
+    try level.addActor(&enemy);
 
     level.tilemap.center(window_rect);
 
@@ -42,7 +46,7 @@ pub fn main() !void {
     while (!raylib.WindowShouldClose()) {
         const inputs = Inputs.read();
 
-        level.input(inputs) catch {
+        level.input(&inputs) catch {
             std.debug.print("Cannot go this way\n", .{});
         };
 

@@ -1,22 +1,21 @@
+const std = @import("std");
+const Allocator = std.mem.Allocator;
 const Callback = @This();
 
-function: Function(*anyopaque),
+allocator: Allocator,
+function: *const fn (*anyopaque) anyerror!void,
 context: *anyopaque,
 
-pub fn Function(ArgType: type, ReturnType: type) type {
-    return *const fn (context: ArgType) ReturnType;
+pub fn init(allocator: Allocator, comptime T: type, function: *const fn (*T) anyerror!void, context: T) !Callback {
+    const ptr = try allocator.create(@TypeOf(context));
+    ptr.* = context;
+    return .{
+        .allocator = allocator,
+        .function = @ptrCast(function),
+        .context = @ptrCast(ptr),
+    };
 }
 
-pub fn init(ArgType: type, function: Function(*ArgType), context: *ArgType) Callback {
-    return Callback{ .function = @ptrCast(function), .context = context };
-}
-
-pub fn initVoid(function: Function(void)) Callback {
-    return Callback{ .function = @ptrCast(function), .context = {} };
-}
-
-pub fn call(self: Callback) void {
-    const context_type = @TypeOf(self.context);
-
-    self.function(self.context);
+pub fn call(self: *Callback) anyerror!void {
+    try self.function(self.context);
 }

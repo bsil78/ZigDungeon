@@ -4,9 +4,9 @@ const Vector = @import("Vector.zig");
 const Rect = @import("Rect.zig").Rect;
 const Tileset = @This();
 
+const Allocator = std.mem.Allocator;
 const Texture = raylib.struct_Texture;
 const ArrayList = std.ArrayList;
-const ArenaAllocator = std.heap.ArenaAllocator;
 const Vector2 = Vector.Vector2;
 
 const TileError = error{OutOfBound};
@@ -37,10 +37,10 @@ const Tile = struct {
     }
 };
 
-pub fn initFromSpriteSheet(png_file_path: []const u8, arena: *ArenaAllocator) !Tileset {
+pub fn initFromSpriteSheet(png_file_path: []const u8, allocator: Allocator) !Tileset {
     var tileset = Tileset{
         .sprite_sheet = raylib.LoadTexture(png_file_path.ptr),
-        .tiles = ArrayList(Tile).init(arena.allocator()),
+        .tiles = ArrayList(Tile).init(allocator),
     };
 
     const sprite_sheet_w: u8 = @intCast(tileset.sprite_sheet.width);

@@ -1,87 +1,67 @@
 const std = @import("std");
 const raylib = @import("raylib.zig");
 const Tilemap = @import("Tilemap.zig");
-const Callback = @import("Callback.zig");
 const Tileset = @import("Tileset.zig");
 const Actor = @import("Actor.zig");
 const Inputs = @import("Inputs.zig");
 const Vector = @import("Vector.zig");
+const Observer = @import("Observer.zig");
+const Callback = @import("Callback.zig");
 const Vector2 = Vector.Vector2;
 const Level = @This();
 
-const ArenaAllocator = std.heap.ArenaAllocator;
+const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
-const LevelError = error{UnreachableTile};
+const LevelError = error{ UnreachableTile, NonExistingActor };
 
 pub const ActorType = enum { Character, Enemy };
 
-arena: ArenaAllocator,
+allocator: Allocator,
 tilemap: Tilemap,
-characters: ArrayList(*Actor),
-enemies: ArrayList(*Actor),
+actors: ArrayList(*Actor),
 
-const ActorContext = struct {
+pub const ActorContext = struct {
     level: *Level,
-    actor_type: ActorType,
     actor: *Actor,
 };
 
-pub fn init(level_png_path: []const u8, sprite_sheet_path: []const u8, arena: *ArenaAllocator) !Level {
-    const tileset = try Tileset.initFromSpriteSheet(sprite_sheet_path, arena);
+pub fn init(level_png_path: []const u8, sprite_sheet_path: []const u8, allocator: Allocator) !Level {
+    const tileset = try Tileset.initFromSpriteSheet(sprite_sheet_path, allocator);
     return Level{
-        .tilemap = try Tilemap.initFromPngFile(level_png_path, tileset, arena),
-        .enemies = ArrayList(*Actor).init(arena.allocator()),
-        .characters = ArrayList(*Actor).init(arena.allocator()),
-        .arena = arena.*,
+        .tilemap = try Tilemap.initFromPngFile(level_png_path, tileset, allocator),
+        .actors = ArrayList(*Actor).init(allocator),
+        .allocator = allocator,
     };
 }
 
-pub fn deinit(self: *Level) void {
-    self.arena.deinit();
-}
+pub fn deinit() !void {}
 
 pub fn draw(self: *Level) !void {
     try self.tilemap.draw();
     try self.drawActors();
 }
 
-pub fn addActor(self: *Level, actor_type: ActorType, actor: *Actor) !void {
-    const array = switch (actor_type) {
-        ActorType.Character => &self.characters,
-        ActorType.Enemy => &self.enemies,
-    };
+pub fn addActor(self: *Level, actor: *Actor) !void {
+    try self.actors.append(actor);
 
-    try array.append(actor);
-
-    var context = ActorContext{ .level = self, .actor_type = actor_type, .actor = actor };
-    const callback = Callback.init(ActorContext, onActorDied, &context);
+    const context = ActorContext{ .level = self, .actor = actor };
+    const callback = try Callback.init(self.allocator, ActorContext, onActorDied, context);
     try actor.event_emitter.subscribe(Actor.ActorEvents.Died, callback);
 }
 
-pub fn removeActor(self: *Level, actor_type: ActorType, actor: *Actor) !void {
-    var actor_array = switch (actor_type) {
-        ActorType.Character => self.characters,
-        ActorType.Enemy => self.enemies,
-    };
-
-    for (actor_array.items, 0..) |item, i| {
+pub fn removeActor(self: *Level, actor: *Actor) !void {
+    for (self.actors.items, 0..) |item, i| {
         if (actor == item) {
-            try actor_array.orderedRemove(i);
+            _ = self.actors.swapRemove(i);
             break;
         }
     }
 }
 
-fn getActorsArrays(self: Level) [2]ArrayList(*Actor) {
-    return [2]ArrayList(*Actor){ self.characters, self.enemies };
-}
-
 fn drawActors(self: *Level) !void {
-    for (self.getActorsArrays()) |actor_array| {
-        for (actor_array.items) |actor| {
-            self.drawActor(actor);
-        }
+    for (self.actors.items) |actor| {
+        self.drawActor(actor);
     }
 }
 
@@ -93,40 +73,48 @@ fn drawActor(self: *Level, actor: *Actor) void {
     raylib.DrawTexture(actor.texture, x, y, raylib.WHITE);
 }
 
-pub fn input(self: Level, inputs: Inputs) !void {
+pub fn input(self: *Level, inputs: *const Inputs) !void {
     if (!inputs.hasAction()) {
         return;
     }
 
-    for (self.characters.items) |character| {
-        const dir: Vector2(f32) = inputs.getDirection();
-        const dest_cell = character.cell.add(dir.intFromFloat(i16));
+    for (self.actors.items) |actor| {
+        if (actor.actor_type == Actor.ActorType.Enemy) {
+            continue;
+        }
 
-        if (try self.tilemap.isCellWalkable(dest_cell) and try self.isCellFree(dest_cell)) {
-            character.move(dest_cell);
+        const dir: Vector2(f32) = inputs.getDirection();
+        const dest_cell = actor.cell.add(dir.intFromFloat(i16));
+
+        if (self.getActorOnCell(dest_cell)) |target| {
+            try actor.attack(target);
+        } else if (try self.tilemap.isCellWalkable(dest_cell) and try self.isCellFree(dest_cell)) {
+            actor.move(dest_cell);
         } else {
             return LevelError.UnreachableTile;
         }
     }
 }
 
-fn isCellFree(self: Level, cell: Vector2(i16)) Tilemap.TilemapError!bool {
+fn isCellFree(self: *Level, cell: Vector2(i16)) Tilemap.TilemapError!bool {
     if (self.tilemap.tileExist(cell)) {
         return Tilemap.TilemapError.OutOfBound;
     }
 
-    for (self.getActorsArrays()) |actor_array| {
-        for (actor_array.items) |actor| {
-            if (cell.equal(actor.cell)) {
-                return false;
-            }
+    return (self.getActorOnCell(cell) == null);
+}
+
+fn getActorOnCell(self: *Level, cell: Vector2(i16)) ?*Actor {
+    for (self.actors.items) |actor| {
+        if (cell.equal(actor.cell)) {
+            return actor;
         }
     }
 
-    return true;
+    return null;
 }
 
 fn onActorDied(context: *ActorContext) !void {
-    try context.level.removeActor(context.actor_type, context.actor);
-    std.debug.print("Actor of type {s} died", .{@tagName(context.actor_type)});
+    std.debug.print("Actor of type {s} died\n", .{@tagName(context.actor.actor_type)});
+    try context.level.removeActor(context.actor);
 }
