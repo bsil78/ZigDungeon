@@ -7,6 +7,7 @@ const Tileset = @import("Tileset.zig");
 const Vector = @import("Vector.zig");
 const Rect = @import("Rect.zig").Rect;
 const Inputs = @import("Inputs.zig");
+const Globals = @import("Globals.zig");
 
 const Vector2 = Vector.Vector2;
 
@@ -17,6 +18,14 @@ const target_fps = 60;
 const background_color = raylib.BLACK;
 
 pub fn main() !void {
+    var prng = std.Random.DefaultPrng.init(blk: {
+        var seed: u64 = undefined;
+        try std.posix.getrandom(std.mem.asBytes(&seed));
+        break :blk seed;
+    });
+    
+    Globals.random = prng.random();
+    
     const window_rect = Rect(f32).init(0, 0, window_width, window_height);
 
     raylib.InitWindow(window_width, window_height, game_name);
@@ -24,11 +33,9 @@ pub fn main() !void {
 
     defer raylib.CloseWindow();
 
-    // create our general purpose allocator
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-
-    // get an std.mem.Allocator from it
-    const allocator = gpa.allocator();
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
     var character = try Actor.init("sprites/character/Character.png", Vector2(i16).One(), Actor.ActorType.Character, allocator);
     var enemy = try Actor.init("sprites/character/Enemy.png", Vector2(i16).init(2, 1), Actor.ActorType.Enemy, allocator);
@@ -44,15 +51,13 @@ pub fn main() !void {
     defer raylib.UnloadRenderTexture(render_texture);
 
     while (!raylib.WindowShouldClose()) {
+
+        // Inputs handeling
         const inputs = Inputs.read();
 
         level.input(&inputs) catch {
             std.debug.print("Cannot go this way\n", .{});
         };
-
-        if (inputs.hasAction()) {
-            inputs.print();
-        }
 
         // Rendering
         raylib.BeginTextureMode(render_texture);

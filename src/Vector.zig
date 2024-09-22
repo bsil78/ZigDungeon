@@ -31,15 +31,6 @@ pub fn Vector2(T: type) type {
             return Vector2(T).init(self.x * by.x, self.y * by.y);
         }
 
-        pub fn CardinalDirections() [4]Vector2(T) {
-            return [4]Vector2(T){
-                Vector2(T).Right(),
-                Vector2(T).Down(),
-                Vector2(T).Left(),
-                Vector2(T).Up(),
-            };
-        }
-
         pub fn Zero() Vector2(T) {
             return Vector2(T).initOneValue(0);
         }
@@ -88,5 +79,14 @@ pub fn Vector2(T: type) type {
                 .y = self.y,
             };
         }
+    };
+}
+
+pub fn CardinalDirections(T: type) [4]Vector2(T) {
+    return [4]Vector2(T){
+        Vector2(T).Right(),
+        Vector2(T).Down(),
+        Vector2(T).Left(),
+        Vector2(T).Up(),
     };
 }

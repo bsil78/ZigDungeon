@@ -22,19 +22,17 @@ pub const tile_size = 32;
 position: Vector2(f32) = Vector2(f32).Zero(),
 tileset: Tileset,
 tiles: ArrayList(TileType) = undefined,
-grid_width: u32 = 0,
-grid_height: u32 = 0,
+grid_size: Vector2(u32) = undefined,
 
 pub fn initFromPngFile(file_path: []const u8, tileset: Tileset, allocator: Allocator) !Tilemap {
     const image = raylib.LoadImage(file_path.ptr);
     var tilemap = Tilemap{ .tileset = tileset };
 
     tilemap.tiles = ArrayList(TileType).init(allocator);
-    tilemap.grid_height = @intCast(image.height);
-    tilemap.grid_width = @intCast(image.width);
+    tilemap.grid_size = Vector2(u32).init(@intCast(image.height), @intCast(image.width));
 
-    for (0..tilemap.grid_height) |column| {
-        for (0..tilemap.grid_width) |row| {
+    for (0..tilemap.grid_size.y) |column| {
+        for (0..tilemap.grid_size.x) |row| {
             const color: raylib.struct_Color = raylib.GetImageColor(image, @intCast(row), @intCast(column));
             const tile = if (color.r == 0.0) TileType.Ground else TileType.Wall;
             try tilemap.tiles.append(tile);
@@ -47,7 +45,7 @@ pub fn initFromPngFile(file_path: []const u8, tileset: Tileset, allocator: Alloc
 // Print all the TileType of the tilemap in a grid like fashion
 pub fn print(self: Tilemap) void {
     for (self.tiles.items, 0..) |tile, i| {
-        if (i % self.grid_width == 0) {
+        if (i % self.grid_size.x == 0) {
             std.debug.print("\n", .{});
         }
         std.debug.print("{s:^10}", .{@tagName(tile)});
@@ -59,8 +57,8 @@ pub fn print(self: Tilemap) void {
 // Draw all the tiles of the tilemap
 pub fn draw(self: Tilemap) !void {
     for (self.tiles.items, 0..) |tile, i| {
-        const row: f32 = @floatFromInt(i % self.grid_width);
-        const col: f32 = @floatFromInt(i / self.grid_width);
+        const row: f32 = @floatFromInt(i % self.grid_size.x);
+        const col: f32 = @floatFromInt(i / self.grid_size.x);
         const w: f32 = @floatFromInt(self.tileset.tile_width);
         const h: f32 = @floatFromInt(self.tileset.tile_height);
         const pos = Vector2(f32).init(self.position.x + row * w, self.position.y + col * h);
@@ -74,8 +72,8 @@ pub fn draw(self: Tilemap) !void {
 pub fn getRect(self: Tilemap) Rect(f32) {
     const tile_width: f32 = @floatFromInt(self.tileset.tile_width);
     const tile_height: f32 = @floatFromInt(self.tileset.tile_height);
-    const grid_width: f32 = @floatFromInt(self.grid_width);
-    const grid_height: f32 = @floatFromInt(self.grid_height);
+    const grid_width: f32 = @floatFromInt(self.grid_size.x);
+    const grid_height: f32 = @floatFromInt(self.grid_size.y);
 
     return Rect(f32).init(
         self.position.x,
@@ -108,7 +106,7 @@ pub fn getTile(self: Tilemap, cell: Vector2(i16)) TilemapError!TileType {
 }
 
 fn getTileId(self: Tilemap, cell: Vector2(i16)) TilemapError!usize {
-    const width: i16 = @intCast(self.grid_width);
+    const width: i16 = @intCast(self.grid_size.x);
     const id = cell.y * width + cell.x;
 
     if (id >= self.tiles.items.len) {
@@ -119,7 +117,7 @@ fn getTileId(self: Tilemap, cell: Vector2(i16)) TilemapError!usize {
 }
 
 pub fn tileExist(self: Tilemap, cell: Vector2(i16)) bool {
-    const width: i16 = @intCast(self.grid_width);
+    const width: i16 = @intCast(self.grid_size.x);
     const id = cell.y * width + cell.x;
     return id >= self.tiles.items.len;
 }

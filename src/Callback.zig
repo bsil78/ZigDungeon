@@ -16,6 +16,10 @@ pub fn init(allocator: Allocator, comptime T: type, function: *const fn (*T) any
     };
 }
 
+pub fn deinit(self: *Callback) !void {
+    try self.allocator.destroy(self.context);
+}
+
 pub fn call(self: *Callback) anyerror!void {
     try self.function(self.context);
 }

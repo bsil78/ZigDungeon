@@ -7,6 +7,8 @@ const Inputs = @import("Inputs.zig");
 const Vector = @import("Vector.zig");
 const Observer = @import("Observer.zig");
 const Callback = @import("Callback.zig");
+const ActorAction = @import("ActorAction.zig");
+const Globals = @import("Globals.zig");
 const Vector2 = Vector.Vector2;
 const Level = @This();
 
@@ -88,12 +90,15 @@ pub fn input(self: *Level, inputs: *const Inputs) !void {
 
         if (self.getActorOnCell(dest_cell)) |target| {
             try actor.attack(target);
-        } else if (try self.tilemap.isCellWalkable(dest_cell) and try self.isCellFree(dest_cell)) {
+        } else if (try self.isCellWalkable(dest_cell)) {
             actor.move(dest_cell);
         } else {
             return LevelError.UnreachableTile;
         }
     }
+
+    try self.enemiesResolveActions();
+    try self.enemiesChooseActions();
 }
 
 fn isCellFree(self: *Level, cell: Vector2(i16)) Tilemap.TilemapError!bool {
@@ -104,7 +109,11 @@ fn isCellFree(self: *Level, cell: Vector2(i16)) Tilemap.TilemapError!bool {
     return (self.getActorOnCell(cell) == null);
 }
 
-fn getActorOnCell(self: *Level, cell: Vector2(i16)) ?*Actor {
+pub fn isCellWalkable(self: *Level, cell: Vector2(i16)) Tilemap.TilemapError!bool {
+    return try self.isCellFree(cell) and try self.tilemap.isCellWalkable(cell);
+}
+
+pub fn getActorOnCell(self: *Level, cell: Vector2(i16)) ?*Actor {
     for (self.actors.items) |actor| {
         if (cell.equal(actor.cell)) {
             return actor;
@@ -117,4 +126,50 @@ fn getActorOnCell(self: *Level, cell: Vector2(i16)) ?*Actor {
 fn onActorDied(context: *ActorContext) !void {
     std.debug.print("Actor of type {s} died\n", .{@tagName(context.actor.actor_type)});
     try context.level.removeActor(context.actor);
+}
+
+fn actorGetAccessibleCells(self: *Level, allocator: Allocator, actor: *Actor) !ArrayList(Vector2(i16)) {
+    var array = ArrayList(Vector2(i16)).init(allocator);
+
+    for (Vector.CardinalDirections(i16)) |dir| {
+        const dest_cell = actor.cell.add(dir);
+        if (try self.isCellWalkable(dest_cell)) {
+            try array.append(dest_cell);
+        }
+    }
+
+    return array;
+}
+
+fn enemiesChooseActions(self: *Level) !void {
+    for (self.actors.items) |actor| {
+        if (actor.actor_type == Actor.ActorType.Character) {
+            continue;
+        }
+
+        var cells = try self.actorGetAccessibleCells(self.allocator, actor);
+        defer cells.deinit();
+
+        if (cells.items.len == 0) {
+            actor.next_action = null;
+            continue;
+        }
+
+        const rdm_id = Globals.random.int(usize) % cells.items.len;
+
+        const dest_cell = cells.items[rdm_id];
+        actor.planAction(self, Actor.ActionType.Move, dest_cell);
+    }
+}
+
+fn enemiesResolveActions(self: *Level) !void {
+    for (self.actors.items) |actor| {
+        if (actor.actor_type == Actor.ActorType.Character) {
+            continue;
+        }
+
+        if (actor.next_action) |action| {
+            try action.resolve();
+        }
+    }
 }
