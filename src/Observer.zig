@@ -12,7 +12,7 @@ pub fn EventEmitter(EventEnum: type) type {
         listeners: Listeners(EventEnum),
 
         pub fn Listeners(EnumType: type) type {
-            return HashMap(@typeInfo(EnumType).Enum.tag_type, ArrayList(Callback));
+            return HashMap(@typeInfo(EnumType).@"enum".tag_type, ArrayList(Callback));
         }
 
         pub fn init(allocator: Allocator) !This {
@@ -20,7 +20,7 @@ pub fn EventEmitter(EventEnum: type) type {
                 .listeners = Listeners(EventEnum).init(allocator),
             };
 
-            inline for (@typeInfo(EventEnum).Enum.fields) |field| {
+            inline for (@typeInfo(EventEnum).@"enum".fields) |field| {
                 try emitter.listeners.put(field.value, ArrayList(Callback).init(allocator));
             }
 

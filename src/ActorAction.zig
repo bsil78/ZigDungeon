@@ -10,7 +10,7 @@ level: *Level,
 caster: *Actor,
 action_type: ActionType,
 target_cell: ?Vector2(i16),
-preview: ActionPreview = null,
+preview: ?ActionPreview = null,
 
 pub fn resolve(self: *const ActorAction) !void {
     switch (self.action_type) {

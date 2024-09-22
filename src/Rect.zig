@@ -14,7 +14,7 @@ pub fn Rect(T: type) type {
         }
 
         pub fn initV(pos: Vector2(T), size: Vector2(T)) Rect(T) {
-            return .{ .x = pos.x, .y = pos.y, .w = size.w, .h = size.h };
+            return .{ .x = pos.x, .y = pos.y, .w = size.x, .h = size.y };
         }
 
         pub fn centerRect(self: Rect(T), container_rect: Rect(T)) Rect(T) {

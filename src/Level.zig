@@ -42,6 +42,7 @@ pub fn deinit() !void {}
 pub fn draw(self: *Level) !void {
     try self.tilemap.draw();
     try self.drawActors();
+    try self.drawActionsPreview();
 }
 
 pub fn addActor(self: *Level, actor: *Actor) !void {
@@ -85,8 +86,8 @@ pub fn input(self: *Level, inputs: *const Inputs) !void {
             continue;
         }
 
-        const dir: Vector2(f32) = inputs.getDirection();
-        const dest_cell = actor.cell.add(dir.intFromFloat(i16));
+        var dir: Vector2(f32) = inputs.getDirection();
+        const dest_cell = actor.cell.add(&dir.intFromFloat(i16));
 
         if (self.getActorOnCell(dest_cell)) |target| {
             try actor.attack(target);
@@ -98,7 +99,7 @@ pub fn input(self: *Level, inputs: *const Inputs) !void {
     }
 
     try self.enemiesResolveActions();
-    try self.enemiesChooseActions();
+    try self.enemiesPlanActions();
 }
 
 fn isCellFree(self: *Level, cell: Vector2(i16)) Tilemap.TilemapError!bool {
@@ -115,7 +116,7 @@ pub fn isCellWalkable(self: *Level, cell: Vector2(i16)) Tilemap.TilemapError!boo
 
 pub fn getActorOnCell(self: *Level, cell: Vector2(i16)) ?*Actor {
     for (self.actors.items) |actor| {
-        if (cell.equal(actor.cell)) {
+        if (cell.equal(&actor.cell)) {
             return actor;
         }
     }
@@ -132,7 +133,7 @@ fn actorGetAccessibleCells(self: *Level, allocator: Allocator, actor: *Actor) !A
     var array = ArrayList(Vector2(i16)).init(allocator);
 
     for (Vector.CardinalDirections(i16)) |dir| {
-        const dest_cell = actor.cell.add(dir);
+        const dest_cell = actor.cell.add(&dir);
         if (try self.isCellWalkable(dest_cell)) {
             try array.append(dest_cell);
         }
@@ -141,7 +142,7 @@ fn actorGetAccessibleCells(self: *Level, allocator: Allocator, actor: *Actor) !A
     return array;
 }
 
-fn enemiesChooseActions(self: *Level) !void {
+fn enemiesPlanActions(self: *Level) !void {
     for (self.actors.items) |actor| {
         if (actor.actor_type == Actor.ActorType.Character) {
             continue;
@@ -170,6 +171,16 @@ fn enemiesResolveActions(self: *Level) !void {
 
         if (actor.next_action) |action| {
             try action.resolve();
+        }
+    }
+}
+
+fn drawActionsPreview(self: *Level) !void {
+    for (self.actors.items) |actor| {
+        if (actor.next_action) |action| {
+            if (action.preview) |preview| {
+                preview.draw(self);
+            }
         }
     }
 }

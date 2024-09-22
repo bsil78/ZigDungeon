@@ -20,7 +20,6 @@ pub const ActorType = enum {
     Enemy,
 };
 
-
 pub const ActionType = enum {
     Move,
     Attack,
@@ -64,13 +63,13 @@ fn die(self: *Actor) !void {
 }
 
 pub fn planAction(self: *Actor, level: *Level, action_type: ActionType, cell: ?Vector2(i16)) void {
-    self.next_action = ActorAction {
+    self.next_action = ActorAction{
         .caster = self,
         .level = level,
         .action_type = action_type,
         .target_cell = cell,
-        .preview = ActionPreview{.cell = cell, .action_type = action_type},
     };
 
+    self.next_action.?.preview = ActionPreview.init(cell.?, &self.next_action.?);
     std.debug.print("Actor planned to {s} at cell x: {d} y: {d}\n", .{ @tagName(action_type), cell.?.x, cell.?.y });
 }
