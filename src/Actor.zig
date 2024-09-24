@@ -6,6 +6,8 @@ const Vector = @import("Vector.zig");
 const Observer = @import("Observer.zig");
 const ActorAction = @import("ActorAction.zig");
 const ActionPreview = @import("ActionPreview.zig");
+const Transform = @import("Transform.zig");
+const Sprite = @import("Sprite.zig");
 const Actor = @This();
 
 const Allocator = std.mem.Allocator;
@@ -26,7 +28,7 @@ pub const ActionType = enum {
 };
 
 event_emitter: Observer.EventEmitter(ActorEvents) = undefined,
-texture: raylib.struct_Texture = undefined,
+sprite: Sprite = undefined,
 next_action: ?ActorAction = null,
 actor_type: ActorType,
 cell: Vector2(i16),
@@ -35,7 +37,7 @@ force: u16 = 1,
 
 pub fn init(texture_path: []const u8, cell: Vector2(i16), actor_type: ActorType, allocator: Allocator) !Actor {
     var actor = Actor{ .cell = cell, .actor_type = actor_type };
-    actor.texture = raylib.LoadTexture(texture_path.ptr);
+    actor.sprite = Sprite.init(texture_path);
     actor.event_emitter = try Observer.EventEmitter(ActorEvents).init(allocator);
 
     return actor;
@@ -72,4 +74,16 @@ pub fn planAction(self: *Actor, level: *Level, action_type: ActionType, cell: ?V
 
     self.next_action.?.preview = ActionPreview.init(cell.?, &self.next_action.?);
     std.debug.print("Actor planned to {s} at cell x: {d} y: {d}\n", .{ @tagName(action_type), cell.?.x, cell.?.y });
+}
+
+pub fn draw(self: *Actor, opt_transform: ?*const Transform) void {
+    const actor_trans = Transform{
+        .position = self.cell.times(Tilemap.tile_size).floatFromInt(f32),
+        .rotation = 0.0,
+        .scale = Vector2(f32).One(),
+    };
+
+    const result_trans = if (opt_transform) |trans| actor_trans.xform(trans) else actor_trans;
+
+    self.sprite.draw(&result_trans);
 }

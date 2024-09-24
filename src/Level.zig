@@ -64,7 +64,7 @@ pub fn removeActor(self: *Level, actor: *Actor) !void {
 
 fn drawActors(self: *Level) !void {
     for (self.actors.items) |actor| {
-        self.drawActor(actor);
+        actor.draw(&self.tilemap.transform);
     }
 }
 

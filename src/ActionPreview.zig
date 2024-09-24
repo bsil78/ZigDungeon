@@ -29,7 +29,7 @@ pub fn draw(self: *const ActionPreview, level: *Level) void {
     const dir = self.action.caster.cell.directionTo(&cell);
     const rot = trigo.radToDeg(f32, dir.angle());
     const pivot = tile_size.divide(2.0);
-    const pos = cell.toFloatV(f32).times(&tile_size).add(&level.tilemap.position).add(&pivot);
+    const pos = cell.toFloatV(f32).times(&tile_size).add(&level.tilemap.transform.position).add(&pivot);
 
     raylib.DrawTexturePro(
         self.arrow_texture,

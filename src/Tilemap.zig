@@ -2,10 +2,11 @@ const std = @import("std");
 const raylib = @import("raylib.zig");
 const Tileset = @import("Tileset.zig");
 const Vector = @import("Vector.zig");
-const Rect = @import("Rect.zig").Rect;
+const Transform = @import("Transform.zig");
 const Allocator = std.mem.Allocator;
 const Tilemap = @This();
 
+const Rect = @import("Rect.zig").Rect;
 const ArrayList = std.ArrayList;
 const Vector2 = Vector.Vector2;
 
@@ -19,7 +20,7 @@ pub const TilemapError = error{OutOfBound};
 
 pub const tile_size = 32;
 
-position: Vector2(f32) = Vector2(f32).Zero(),
+transform: Transform = Transform{},
 tileset: Tileset,
 tiles: ArrayList(TileType) = undefined,
 grid_size: Vector2(u32) = undefined,
@@ -61,7 +62,7 @@ pub fn draw(self: Tilemap) !void {
         const col: f32 = @floatFromInt(i / self.grid_size.x);
         const w: f32 = @floatFromInt(self.tileset.tile_width);
         const h: f32 = @floatFromInt(self.tileset.tile_height);
-        const pos = Vector2(f32).init(self.position.x + row * w, self.position.y + col * h);
+        const pos = Vector2(f32).init(self.transform.position.x + row * w, self.transform.position.y + col * h);
         const tile_index: usize = @intCast(@intFromEnum(tile));
 
         try self.tileset.drawTile(tile_index, pos);
@@ -76,8 +77,8 @@ pub fn getRect(self: Tilemap) Rect(f32) {
     const grid_height: f32 = @floatFromInt(self.grid_size.y);
 
     return Rect(f32).init(
-        self.position.x,
-        self.position.y,
+        self.transform.position.x,
+        self.transform.position.y,
         grid_width * tile_width,
         grid_height * tile_height,
     );
@@ -88,7 +89,7 @@ pub fn center(self: *Tilemap, container_rect: Rect(f32)) void {
     const rect = self.getRect();
     const centered_rect = rect.centerRect(container_rect);
 
-    self.position = centered_rect.getRectPosition();
+    self.transform.position = centered_rect.getRectPosition();
 }
 
 pub fn isCellWalkable(self: Tilemap, cell: Vector2(i16)) TilemapError!bool {
