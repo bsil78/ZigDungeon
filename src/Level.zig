@@ -8,7 +8,7 @@ const Vector = @import("Vector.zig");
 const Observer = @import("Observer.zig");
 const Callback = @import("Callback.zig");
 const ActorAction = @import("ActorAction.zig");
-const Globals = @import("Globals.zig");
+const globals = @import("Engine/globals.zig");
 const Vector2 = Vector.Vector2;
 const Level = @This();
 
@@ -49,8 +49,9 @@ pub fn addActor(self: *Level, actor: *Actor) !void {
     try self.actors.append(actor);
 
     const context = ActorContext{ .level = self, .actor = actor };
-    const callback = try Callback.init(self.allocator, ActorContext, onActorDied, context);
-    try actor.event_emitter.subscribe(Actor.ActorEvents.Died, callback);
+    const callback = try Callback.CallbackSubscribeContext.init(self.allocator, ActorContext, onActorDied, context);
+    const callback_type = Callback.CallbackType{ .sub_context = callback };
+    try actor.event_emitter.subscribe(Actor.ActorEvents.Died, callback_type);
 }
 
 pub fn removeActor(self: *Level, actor: *Actor) !void {
@@ -124,11 +125,6 @@ pub fn getActorOnCell(self: *Level, cell: Vector2(i16)) ?*Actor {
     return null;
 }
 
-fn onActorDied(context: *ActorContext) !void {
-    std.debug.print("Actor of type {s} died\n", .{@tagName(context.actor.actor_type)});
-    try context.level.removeActor(context.actor);
-}
-
 fn actorGetAccessibleCells(self: *Level, allocator: Allocator, actor: *Actor) !ArrayList(Vector2(i16)) {
     var array = ArrayList(Vector2(i16)).init(allocator);
 
@@ -156,7 +152,7 @@ fn enemiesPlanActions(self: *Level) !void {
             continue;
         }
 
-        const rdm_id = Globals.random.int(usize) % cells.items.len;
+        const rdm_id = globals.random.int(usize) % cells.items.len;
 
         const dest_cell = cells.items[rdm_id];
         actor.planAction(self, Actor.ActionType.Move, dest_cell);
@@ -183,4 +179,11 @@ fn drawActionsPreview(self: *Level) !void {
             }
         }
     }
+}
+
+// Event callbacks
+
+fn onActorDied(context: *ActorContext) !void {
+    std.debug.print("Actor of type {s} died\n", .{@tagName(context.actor.actor_type)});
+    try context.level.removeActor(context.actor);
 }

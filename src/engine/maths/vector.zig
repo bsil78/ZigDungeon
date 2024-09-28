@@ -1,6 +1,7 @@
 const std = @import("std");
 const raylib = @import("raylib.zig");
 
+/// Create a Vector2 as follows: Vector2{x: T, y: T}
 pub fn Vector2(T: type) type {
     return struct {
         x: T,
