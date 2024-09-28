@@ -1,12 +1,14 @@
-const ActorAction = @import("ActorAction.zig");
 const std = @import("std");
-const raylib = @import("raylib.zig");
-const trigo = @import("trigo.zig");
+const engine = @import("engine/engine.zig");
+const ActorAction = @import("ActorAction.zig");
 const Level = @import("Level.zig");
-const Tilemap = @import("Tilemap.zig");
-const Rect = @import("Rect.zig").Rect;
-const Vector2 = @import("Vector.zig").Vector2;
 const ActionPreview = @This();
+
+const Tilemap = engine.tiles.Tilemap;
+const raylib = engine.raylib;
+const trigo = engine.maths.trigo;
+const Rect = engine.maths.Rect;
+const Vector2 = engine.maths.Vector.Vector2;
 
 const arrow_texture_path = "sprites/ui/EnemyActions/Arrow.png";
 

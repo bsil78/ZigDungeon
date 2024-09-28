@@ -1,4 +1,4 @@
-const Vector2 = @import("Vector.zig").Vector2;
+const Vector2 = @import("vector.zig").Vector2;
 const Rect = @import("Rect.zig").Rect;
 const Transform = @This();
 

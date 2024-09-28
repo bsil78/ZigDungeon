@@ -1,6 +1,7 @@
-const raylib = @import("raylib.zig");
-const Vector = @import("Vector.zig");
-const Vector2 = Vector.Vector2;
+const raylib = @import("../core/raylib.zig");
+const maths = @import("maths.zig");
+const Vector = maths.Vector;
+const Vector2 = maths.Vector.Vector2;
 
 pub fn Rect(T: type) type {
     return struct {
@@ -17,6 +18,7 @@ pub fn Rect(T: type) type {
             return .{ .x = pos.x, .y = pos.y, .w = size.x, .h = size.y };
         }
 
+        /// center the Rect in the given container Rect and return the result Rect
         pub fn centerRect(self: Rect(T), container_rect: Rect(T)) Rect(T) {
             return Rect(T).init(
                 container_rect.x + (container_rect.w / 2.0) - (self.w / 2.0),

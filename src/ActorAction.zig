@@ -1,10 +1,13 @@
 const std = @import("std");
-const ActorAction = @This();
+const engine = @import("engine/engine.zig");
 const Actor = @import("Actor.zig");
 const Level = @import("Level.zig");
-const Vector2 = @import("Vector.zig").Vector2;
 const ActionPreview = @import("ActionPreview.zig");
+
+const ActorAction = @This();
+
 const ActionType = Actor.ActionType;
+const Vector2 = engine.maths.Vector.Vector2;
 
 level: *Level,
 caster: *Actor,

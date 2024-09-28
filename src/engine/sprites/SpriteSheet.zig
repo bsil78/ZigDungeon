@@ -1,6 +1,7 @@
-const raylib = @import("raylib.zig");
-const Vector2 = @import("Vector.zig").Vector2;
-const Rect = @import("Rect.zig").Rect;
+const raylib = @import("../core/raylib.zig");
+const maths = @import("../maths/maths.zig");
+const Vector2 = maths.Vector2;
+const Rect = maths.Rect;
 const SpriteSheet = @This();
 
 texture: raylib.Texture2D,

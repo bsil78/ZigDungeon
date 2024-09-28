@@ -1,14 +1,14 @@
 const std = @import("std");
-const raylib = @import("raylib.zig");
+const raylib = @import("../core/raylib.zig");
+const maths = @import("../maths/maths.zig");
 const Tileset = @import("Tileset.zig");
-const Vector = @import("Vector.zig");
-const Transform = @import("Transform.zig");
-const Allocator = std.mem.Allocator;
 const Tilemap = @This();
 
-const Rect = @import("Rect.zig").Rect;
+const Allocator = std.mem.Allocator;
+const Transform = maths.Transform;
+const Rect = maths.Rect;
 const ArrayList = std.ArrayList;
-const Vector2 = Vector.Vector2;
+const Vector2 = maths.Vector.Vector2;
 
 const TileType = enum(u16) {
     Wall,

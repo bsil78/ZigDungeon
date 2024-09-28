@@ -1,17 +1,18 @@
 const std = @import("std");
-const raylib = @import("raylib.zig");
-const Tilemap = @import("Tilemap.zig");
-const Tileset = @import("Tileset.zig");
+const engine = @import("engine/engine.zig");
 const Actor = @import("Actor.zig");
-const Inputs = @import("Inputs.zig");
-const Vector = @import("Vector.zig");
-const Observer = @import("Observer.zig");
-const Callback = @import("Callback.zig");
 const ActorAction = @import("ActorAction.zig");
-const globals = @import("Engine/globals.zig");
-const Vector2 = Vector.Vector2;
 const Level = @This();
 
+const raylib = engine.raylib;
+const globals = engine.core.globals;
+const callbacks = engine.events.callbacks;
+const EventEmitter = engine.EventEmitter;
+const Vector = engine.maths.Vector;
+const Vector2 = Vector.Vector2;
+const Tilemap = engine.tiles.Tilemap;
+const Tileset = engine.tiles.Tileset;
+const Inputs = engine.core.inputs;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
@@ -49,8 +50,8 @@ pub fn addActor(self: *Level, actor: *Actor) !void {
     try self.actors.append(actor);
 
     const context = ActorContext{ .level = self, .actor = actor };
-    const callback = try Callback.CallbackSubscribeContext.init(self.allocator, ActorContext, onActorDied, context);
-    const callback_type = Callback.CallbackType{ .sub_context = callback };
+    const callback = try callbacks.CallbackSubscribeContext.init(self.allocator, ActorContext, onActorDied, context);
+    const callback_type = callbacks.CallbackType{ .sub_context = callback };
     try actor.event_emitter.subscribe(Actor.ActorEvents.Died, callback_type);
 }
 

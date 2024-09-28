@@ -1,10 +1,11 @@
 const std = @import("std");
-const CallbackType = @import("Callback.zig").CallbackType;
+pub const callbacks = @import("callbacks.zig");
+const CallbackType = @import("callbacks.zig").CallbackType;
+const Self = @This();
+
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const HashMap = std.AutoHashMap;
-const Level = @import("Level.zig");
-const Self = @This();
 
 pub fn EventEmitter(EventEnum: type) type {
     return struct {

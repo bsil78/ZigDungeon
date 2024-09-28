@@ -1,17 +1,18 @@
 const std = @import("std");
-const raylib = @import("raylib.zig");
+const engine = @import("engine/engine.zig");
+const raylib = engine.raylib;
 const Level = @import("Level.zig");
-const Tilemap = @import("Tilemap.zig");
-const Vector = @import("Vector.zig");
-const Observer = @import("Observer.zig");
 const ActorAction = @import("ActorAction.zig");
 const ActionPreview = @import("ActionPreview.zig");
-const Transform = @import("Transform.zig");
-const Sprite = @import("Sprite.zig");
 const Actor = @This();
 
+const Tilemap = engine.tiles.Tilemap;
+const events = engine.events;
 const Allocator = std.mem.Allocator;
-const Vector2 = Vector.Vector2;
+const Vector2 = engine.maths.Vector.Vector2;
+const EventEmitter = engine.events.EventEmitter;
+const Sprite = engine.sprites.Sprite;
+const Transform = engine.maths.Transform;
 
 pub const ActorEvents = enum {
     Died,
@@ -27,7 +28,7 @@ pub const ActionType = enum {
     Attack,
 };
 
-event_emitter: Observer.EventEmitter(ActorEvents) = undefined,
+event_emitter: EventEmitter(ActorEvents) = undefined,
 sprite: Sprite = undefined,
 next_action: ?ActorAction = null,
 actor_type: ActorType,
@@ -38,7 +39,7 @@ force: u16 = 1,
 pub fn init(texture_path: []const u8, cell: Vector2(i16), actor_type: ActorType, allocator: Allocator) !Actor {
     var actor = Actor{ .cell = cell, .actor_type = actor_type };
     actor.sprite = Sprite.init(texture_path);
-    actor.event_emitter = try Observer.EventEmitter(ActorEvents).init(allocator);
+    actor.event_emitter = try EventEmitter(ActorEvents).init(allocator);
 
     return actor;
 }

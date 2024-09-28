@@ -1,3 +1,4 @@
+const std = @import("std");
 const ProcessTrait = @import("ProcessTrait.zig");
 const SpriteAnimations = @import("SpriteAnimations.zig");
 const AnimatedSprite = @This();
@@ -26,7 +27,8 @@ fn process(self: *AnimatedSprite) !void {
     const anim_name = self.animation_name.?;
 
     if (sprite_anim.animations.get(anim_name)) |anim| {
-        //const interval = 1.0 / anim.fps;
+        const interval = 1.0 / anim.fps;
+        std.debug.print("frame interval {d}", .{interval});
     } else {
         return AnimationError.nonExistingAnimation;
     }

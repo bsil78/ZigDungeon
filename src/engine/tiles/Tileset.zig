@@ -1,13 +1,13 @@
 const std = @import("std");
-const raylib = @import("raylib.zig");
-const Vector = @import("Vector.zig");
-const Rect = @import("Rect.zig").Rect;
+const raylib = @import("../core/raylib.zig");
+const maths = @import("../maths/maths.zig");
 const Tileset = @This();
 
 const Allocator = std.mem.Allocator;
 const Texture = raylib.struct_Texture;
 const ArrayList = std.ArrayList;
-const Vector2 = Vector.Vector2;
+const Vector2 = maths.Vector2;
+const Rect = maths.Rect;
 
 const TileError = error{OutOfBound};
 
