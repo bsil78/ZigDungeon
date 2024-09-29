@@ -6,6 +6,7 @@ pub const events = @import("events/events.zig");
 pub const tiles = @import("tiles/tiles.zig");
 pub const traits = @import("traits/traits.zig");
 pub const raylib = core.raylib;
+const engine_events = events.engine_events;
 
 const program_start_timestamp = std.time.milliTimestamp();
 var last_timestamp = 0;
@@ -21,7 +22,8 @@ pub fn init() !void {
     const allocator = arena.allocator();
 
     try core.globals.init();
-    try core.engine_events.init(allocator);
+    try events.engine_events.init(allocator);
+    try core.renderer.init();
 
     while (!raylib.WindowShouldClose()) {
         try mainLoop();
@@ -32,13 +34,13 @@ pub fn init() !void {
 
 pub fn mainLoop() !void {
     // Call global process event
-    core.engine_events.event_emitter.emit(.EngineEvents.process);
+    try engine_events.event_emitter.emit(engine_events.EngineEvents.Process);
 
     // Read input events
-    const inputs = core.Inputs.read();
+    const inputs = core.inputs.read();
 
     // Call global inputs event
-    core.engine_events.event_emitter.emit(.EngineEvents.inputs, &inputs);
+    try engine_events.event_emitter.emitWithContext(engine_events.EngineEvents.Inputs, &inputs);
 
     // Render the game frame
     try core.renderer.render();

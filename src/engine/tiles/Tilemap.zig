@@ -1,6 +1,7 @@
 const std = @import("std");
 const raylib = @import("../core/raylib.zig");
 const maths = @import("../maths/maths.zig");
+const traits = @import("../traits/traits.zig");
 const Tileset = @import("Tileset.zig");
 const Tilemap = @This();
 
@@ -20,6 +21,7 @@ pub const TilemapError = error{OutOfBound};
 
 pub const tile_size = 32;
 
+render_trait: traits.RenderTrait = undefined,
 transform: Transform = Transform{},
 tileset: Tileset,
 tiles: ArrayList(TileType) = undefined,

@@ -1,5 +1,6 @@
 const std = @import("std");
-const ProcessTrait = @import("ProcessTrait.zig");
+const traits = @import("../traits/traits.zig");
+const ProcessTrait = traits.ProcessTrait;
 const SpriteAnimations = @import("SpriteAnimations.zig");
 const AnimatedSprite = @This();
 

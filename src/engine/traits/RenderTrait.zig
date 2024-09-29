@@ -1,19 +1,23 @@
 const std = @import("std");
 const core = @import("../core/core.zig");
 const events = @import("../events/events.zig");
+const maths = @import("../maths/maths.zig");
 const callbacks = events.callbacks;
 const globals = core.globals;
-const ProcessTrait = @This();
+const Transform = maths.Transform;
+const RenderTrait = @This();
 
 ptr: *anyopaque,
-process: *const fn (ptr: *anyopaque) anyerror!void,
+layer_id: u16,
+transform: *Transform,
+render: *const fn (ptr: *anyopaque) anyerror!void,
 
-fn init(ptr: anytype) ProcessTrait {
+fn init(ptr: anytype, layer_id: u16, transform: *Transform) RenderTrait {
     const T = @TypeOf(ptr);
     const ptr_info = @typeInfo(T);
 
     const gen = struct {
-        pub fn process(pointer: *anyopaque) anyerror!void {
+        pub fn render(pointer: *anyopaque) anyerror!void {
             const self: T = @ptrCast(@alignCast(pointer));
             return ptr_info.pointer.child.process(self);
         }
@@ -24,6 +28,10 @@ fn init(ptr: anytype) ProcessTrait {
 
     return .{
         .ptr = ptr,
-        .process = gen.process,
+        .render = gen.render,
+        .layer_id = layer_id,
+        .transform = transform,
     };
 }
+
+fn deinit() !void {}

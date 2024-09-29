@@ -57,6 +57,6 @@ pub const CallbackCallContext = struct {
     }
 
     pub fn call(self: *const CallbackCallContext, context: anytype) anyerror!void {
-        try self.function(context);
+        try self.function(@constCast(context));
     }
 };
