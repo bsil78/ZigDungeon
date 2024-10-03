@@ -10,7 +10,7 @@ const RenderTrait = traits.RenderTrait;
 
 pub const background_color = raylib.BLACK;
 var render_texture: raylib.RenderTexture2D = undefined;
-var render_queue: std.ArrayList(*RenderTrait) = undefined;
+var render_queue: std.ArrayList(*const RenderTrait) = undefined;
 
 const RendererError = error{renderItemNotFound};
 
@@ -21,14 +21,24 @@ pub fn init(allocator: Allocator) !void {
     render_texture = raylib.LoadRenderTexture(project_settings.window_size.x, project_settings.window_size.y);
     defer raylib.UnloadRenderTexture(render_texture);
 
-    render_queue = std.ArrayList(*RenderTrait).init(allocator);
+    render_queue = std.ArrayList(*const RenderTrait).init(allocator);
+}
+
+pub fn deinit() void {
+    render_queue.deinit();
 }
 
 pub fn render() !void {
     raylib.BeginTextureMode(render_texture);
     raylib.ClearBackground(background_color);
 
+    for (render_queue.items) |render_trait| {
+        std.debug.print("Render an element\n", .{});
+        try render_trait.render(render_trait.ptr);
+    }
+
     raylib.EndTextureMode();
+
     raylib.BeginDrawing();
     raylib.DrawTexturePro(
         render_texture.texture,
@@ -41,13 +51,15 @@ pub fn render() !void {
     raylib.EndDrawing();
 }
 
-pub fn addToRenderQueue(render_trait: *RenderTrait) !void {
+pub fn addToRenderQueue(render_trait: *const RenderTrait) !void {
+    std.debug.print("Render trait at adress {*} added to render queue\n", .{render_trait});
+    std.debug.print("Render queue is at adress {*}\n", .{&render_queue});
     try render_queue.append(render_trait);
 }
 
-pub fn removeFromRenderQueue(render_trait: *RenderTrait) !void {
+pub fn removeFromRenderQueue(render_trait: *const RenderTrait) !void {
     for (render_queue.items, 0..) |item, i| {
-        if (item == render_trait) {
+        if (item.ptr == render_trait.ptr) {
             try render_queue.swapRemove(i);
             return;
         }

@@ -5,33 +5,31 @@ const maths = @import("../maths/maths.zig");
 const callbacks = events.callbacks;
 const globals = core.globals;
 const Transform = maths.Transform;
+const renderer = core.renderer;
 const RenderTrait = @This();
 
 ptr: *anyopaque,
-layer_id: u16,
-transform: *Transform,
 render: *const fn (ptr: *anyopaque) anyerror!void,
 
-fn init(ptr: anytype, layer_id: u16, transform: *Transform) RenderTrait {
+pub fn init(ptr: anytype) !RenderTrait {
     const T = @TypeOf(ptr);
     const ptr_info = @typeInfo(T);
 
     const gen = struct {
         pub fn render(pointer: *anyopaque) anyerror!void {
             const self: T = @ptrCast(@alignCast(pointer));
-            return ptr_info.pointer.child.process(self);
+            return ptr_info.pointer.child.render(self);
         }
     };
 
-    const progress_callback = callbacks.CallbackType{ .callback_procedure = .CallbackProcedure.init(gen.process) };
-    globals.event_emitter.subscribe(globals.GlobalEvents.process, progress_callback);
-
-    return .{
+    const render_trait = .{
         .ptr = ptr,
         .render = gen.render,
-        .layer_id = layer_id,
-        .transform = transform,
     };
+
+    return render_trait;
 }
 
-fn deinit() !void {}
+fn deinit(self: *RenderTrait) !void {
+    try renderer.removeFromRenderQueue(self);
+}

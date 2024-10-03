@@ -2,6 +2,7 @@ const std = @import("std");
 const engine = @import("engine/engine.zig");
 const Level = @import("Level.zig");
 const Actor = @import("Actor.zig");
+const raylib = engine.core.raylib;
 const Tileset = engine.tiles.Tileset;
 const Tilemap = engine.tiles.Tilemap;
 const Vector2 = engine.maths.Vector.Vector2;
@@ -22,4 +23,10 @@ pub fn main() !void {
     try level.addActor(&enemy);
 
     level.tilemap.center(project_settings.window_rect);
+
+    while (!raylib.WindowShouldClose()) {
+        try engine.mainLoop();
+    }
+
+    defer raylib.CloseWindow();
 }

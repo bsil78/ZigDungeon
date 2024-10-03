@@ -21,7 +21,7 @@ const LevelError = error{ UnreachableTile, NonExistingActor };
 pub const ActorType = enum { Character, Enemy };
 
 allocator: Allocator,
-tilemap: Tilemap,
+tilemap: *Tilemap,
 actors: ArrayList(*Actor),
 
 pub const ActorContext = struct {

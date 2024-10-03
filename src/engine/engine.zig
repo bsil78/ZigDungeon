@@ -23,13 +23,9 @@ pub fn init() !void {
 
     try core.globals.init();
     try events.engine_events.init(allocator);
-    try core.renderer.init();
 
-    while (!raylib.WindowShouldClose()) {
-        try mainLoop();
-    }
-
-    defer raylib.CloseWindow();
+    try core.renderer.init(allocator);
+    defer core.renderer.deinit();
 }
 
 pub fn mainLoop() !void {

@@ -46,11 +46,9 @@ pub fn EventEmitter(EventEnum: type) type {
         }
 
         pub fn emit(self: *This, event: EventEnum) !void {
-            std.debug.print("emit event: {s}\n", .{@tagName(event)});
             const callbacks_array = self.getCallbacksArray(event).?;
 
             for (callbacks_array.items) |callback_type| {
-                std.debug.print("callback called\n", .{});
                 switch (callback_type) {
                     .sub_context => |callback| try callback.call(),
                     .procedure => |callback| try callback.call(),
@@ -60,11 +58,9 @@ pub fn EventEmitter(EventEnum: type) type {
         }
 
         pub fn emitWithContext(self: *This, event: EventEnum, context: anytype) !void {
-            std.debug.print("emit event: {s}\n", .{@tagName(event)});
             const callbacks_array = self.getCallbacksArray(event).?;
 
             for (callbacks_array.items) |callback_type| {
-                std.debug.print("callback called\n", .{});
                 switch (callback_type) {
                     .call_context => |callback| try callback.call(context),
                     .sub_context, .procedure => unreachable,

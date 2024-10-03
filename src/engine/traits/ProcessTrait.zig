@@ -8,7 +8,7 @@ const ProcessTrait = @This();
 ptr: *anyopaque,
 process: *const fn (ptr: *anyopaque) anyerror!void,
 
-fn init(ptr: anytype) ProcessTrait {
+pub fn init(ptr: anytype) ProcessTrait {
     const T = @TypeOf(ptr);
     const ptr_info = @typeInfo(T);
 
@@ -19,7 +19,7 @@ fn init(ptr: anytype) ProcessTrait {
         }
     };
 
-    const progress_callback = callbacks.CallbackType{ .callback_procedure = .CallbackProcedure.init(gen.process) };
+    const progress_callback = callbacks.CallbackType{ .procedure = callbacks.CallbackProcedure.init(gen.process) };
     globals.event_emitter.subscribe(globals.GlobalEvents.process, progress_callback);
 
     return .{
