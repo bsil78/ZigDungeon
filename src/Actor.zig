@@ -29,25 +29,48 @@ pub const ActionType = enum {
     Attack,
 };
 
-render_trait: traits.RenderTrait = undefined,
+allocator: Allocator = undefined,
 event_emitter: EventEmitter(ActorEvents) = undefined,
-sprite: Sprite = undefined,
+sprite: *Sprite = undefined,
+level: ?*Level = undefined,
 next_action: ?ActorAction = null,
 actor_type: ActorType,
+transform: Transform = .{},
 cell: Vector2(i16),
 hp: u16 = 1,
 force: u16 = 1,
 
-pub fn init(texture_path: []const u8, cell: Vector2(i16), actor_type: ActorType, allocator: Allocator) !Actor {
-    var actor = Actor{ .cell = cell, .actor_type = actor_type };
-    actor.sprite = Sprite.init(texture_path);
-    actor.event_emitter = try EventEmitter(ActorEvents).init(allocator);
-    return actor;
+pub fn init(allocator: Allocator, texture_path: []const u8, cell: Vector2(i16), actor_type: ActorType, level: ?*Level) !*Actor {
+    const parent_trans: ?*Transform = if (level) |lvl| &lvl.tilemap.transform else null;
+    const ptr = try allocator.create(Actor);
+
+    var trans = Transform{};
+    trans.shift(cell.times(Tilemap.tile_size).floatFromInt(f32));
+    trans.parent_transform = parent_trans;
+
+    ptr.* = Actor{
+        .cell = cell,
+        .actor_type = actor_type,
+        .level = level,
+        .transform = trans,
+        .event_emitter = try EventEmitter(ActorEvents).init(allocator),
+        .allocator = allocator,
+        .sprite = try Sprite.init(allocator, texture_path, &ptr.*.transform, 1),
+    };
+
+    return ptr;
+}
+
+pub fn deinit(self: *Actor) !void {
+    try self.sprite.deinit();
+    self.allocator.destroy(self);
 }
 
 pub fn move(self: *Actor, dest_cell: Vector2(i16)) void {
     std.debug.print("Actor moved at cell x: {d} y: {d}\n", .{ dest_cell.x, dest_cell.y });
     self.cell = dest_cell;
+    const tile_size = self.level.tilemap.tileset.tile_size;
+    self.transform.position = dest_cell.times(tile_size);
 }
 
 pub fn attack(self: *Actor, target: *Actor) !void {
@@ -76,16 +99,4 @@ pub fn planAction(self: *Actor, level: *Level, action_type: ActionType, cell: ?V
 
     self.next_action.?.preview = ActionPreview.init(cell.?, &self.next_action.?);
     std.debug.print("Actor planned to {s} at cell x: {d} y: {d}\n", .{ @tagName(action_type), cell.?.x, cell.?.y });
-}
-
-pub fn draw(self: *Actor, opt_transform: ?*const Transform) void {
-    const actor_trans = Transform{
-        .position = self.cell.times(Tilemap.tile_size).floatFromInt(f32),
-        .rotation = 0.0,
-        .scale = Vector2(f32).One(),
-    };
-
-    const result_trans = if (opt_transform) |trans| actor_trans.xform(trans) else actor_trans;
-
-    self.sprite.draw(&result_trans);
 }

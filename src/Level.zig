@@ -29,21 +29,17 @@ pub const ActorContext = struct {
     actor: *Actor,
 };
 
-pub fn init(level_png_path: []const u8, sprite_sheet_path: []const u8, allocator: Allocator) !Level {
+pub fn init(allocator: Allocator, level_png_path: []const u8, sprite_sheet_path: []const u8) !Level {
     const tileset = try Tileset.initFromSpriteSheet(sprite_sheet_path, allocator);
     return Level{
-        .tilemap = try Tilemap.initFromPngFile(level_png_path, tileset, allocator),
+        .tilemap = try Tilemap.initFromPngFile(allocator, level_png_path, tileset),
         .actors = ArrayList(*Actor).init(allocator),
         .allocator = allocator,
     };
 }
 
-pub fn deinit() !void {}
-
-pub fn draw(self: *Level) !void {
-    try self.tilemap.draw();
-    try self.drawActors();
-    try self.drawActionsPreview();
+pub fn deinit(self: *Level) !void {
+    try self.tilemap.deinit();
 }
 
 pub fn addActor(self: *Level, actor: *Actor) !void {
@@ -62,20 +58,6 @@ pub fn removeActor(self: *Level, actor: *Actor) !void {
             break;
         }
     }
-}
-
-fn drawActors(self: *Level) !void {
-    for (self.actors.items) |actor| {
-        actor.draw(&self.tilemap.transform);
-    }
-}
-
-fn drawActor(self: *Level, actor: *Actor) void {
-    const level_x: c_int = @intFromFloat(self.tilemap.position.x);
-    const level_y: c_int = @intFromFloat(self.tilemap.position.y);
-    const x: c_int = level_x + actor.cell.x * Tilemap.tile_size;
-    const y: c_int = level_y + actor.cell.y * Tilemap.tile_size;
-    raylib.DrawTexture(actor.texture, x, y, raylib.WHITE);
 }
 
 pub fn input(self: *Level, inputs: *const Inputs) !void {
@@ -172,18 +154,7 @@ fn enemiesResolveActions(self: *Level) !void {
     }
 }
 
-fn drawActionsPreview(self: *Level) !void {
-    for (self.actors.items) |actor| {
-        if (actor.next_action) |action| {
-            if (action.preview) |preview| {
-                preview.draw(self);
-            }
-        }
-    }
-}
-
 // Event callbacks
-
 fn onActorDied(context: *ActorContext) !void {
     std.debug.print("Actor of type {s} died\n", .{@tagName(context.actor.actor_type)});
     try context.level.removeActor(context.actor);

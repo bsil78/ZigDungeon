@@ -19,22 +19,25 @@ const TileType = enum(u16) {
 };
 
 pub const TilemapError = error{OutOfBound};
-
 pub const tile_size = 32;
 
-render_trait: traits.RenderTrait = undefined,
+render_trait: *traits.RenderTrait = undefined,
 transform: Transform = Transform{},
 tileset: Tileset,
 tiles: ArrayList(TileType) = undefined,
 grid_size: Vector2(u32) = undefined,
+allocator: Allocator,
 
-pub fn initFromPngFile(file_path: []const u8, tileset: Tileset, allocator: Allocator) !*Tilemap {
+pub fn initFromPngFile(allocator: Allocator, file_path: []const u8, tileset: Tileset) !*Tilemap {
     const image = raylib.LoadImage(file_path.ptr);
     const ptr = try allocator.create(Tilemap);
+
     ptr.* = Tilemap{
         .tileset = tileset,
         .tiles = ArrayList(TileType).init(allocator),
         .grid_size = Vector2(u32).init(@intCast(image.height), @intCast(image.width)),
+        .render_trait = try traits.RenderTrait.init(allocator, ptr),
+        .allocator = allocator,
     };
 
     for (0..ptr.grid_size.y) |column| {
@@ -45,10 +48,12 @@ pub fn initFromPngFile(file_path: []const u8, tileset: Tileset, allocator: Alloc
         }
     }
 
-    ptr.*.render_trait = try traits.RenderTrait.init(ptr);
-    try core.renderer.addToRenderQueue(&ptr.*.render_trait);
-
     return ptr;
+}
+
+pub fn deinit(self: *Tilemap) !void {
+    try self.render_trait.deinit();
+    self.allocator.destroy(self);
 }
 
 /// Print all the TileType of the tilemap in a grid like fashion
@@ -65,14 +70,10 @@ pub fn print(self: *Tilemap) void {
 
 /// Draw all the tiles of the tilemap
 pub fn render(self: *Tilemap) !void {
-    std.debug.print("Render Tilemap\n", .{});
-
     for (self.tiles.items, 0..) |tile, i| {
-        const row: f32 = @floatFromInt(i % self.grid_size.x);
-        const col: f32 = @floatFromInt(i / self.grid_size.x);
-        const w: f32 = @floatFromInt(self.tileset.tile_width);
-        const h: f32 = @floatFromInt(self.tileset.tile_height);
-        const pos = Vector2(f32).init(self.transform.position.x + row * w, self.transform.position.y + col * h);
+        const cell = Vector2(f32).init(@floatFromInt(i % self.grid_size.x), @floatFromInt(i / self.grid_size.x));
+        const size = Vector2(u32).init(self.tileset.tile_width, self.tileset.tile_height).floatFromInt(f32);
+        const pos = self.transform.position.add(cell.times(size));
         const tile_index: usize = @intCast(@intFromEnum(tile));
 
         try self.tileset.drawTile(tile_index, pos);

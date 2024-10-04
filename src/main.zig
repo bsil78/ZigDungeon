@@ -16,17 +16,18 @@ pub fn main() !void {
     try engine.init();
     defer engine.deinit();
 
-    var character = try Actor.init("sprites/character/Character.png", Vector2(i16).One(), Actor.ActorType.Character, allocator);
-    var enemy = try Actor.init("sprites/character/Enemy.png", Vector2(i16).init(2, 1), Actor.ActorType.Enemy, allocator);
-
-    var level = try Level.init("Levels/Level1.png", "sprites/tilesets/Biome1Tileset.png", allocator);
-    try level.addActor(&character);
-    try level.addActor(&enemy);
+    var level = try Level.init(allocator, "Levels/Level1.png", "sprites/tilesets/Biome1Tileset.png");
 
     level.tilemap.center(project_settings.window_rect);
 
+    const character = try Actor.init(allocator, "sprites/character/Character.png", Vector2(i16).One(), Actor.ActorType.Character, &level);
+    const enemy = try Actor.init(allocator, "sprites/character/Enemy.png", Vector2(i16).init(2, 1), Actor.ActorType.Enemy, &level);
+
+    try level.addActor(character);
+    try level.addActor(enemy);
+
     while (!raylib.WindowShouldClose()) {
-        try engine.mainLoop();
+        try engine.mainLoop();  
     }
 
     defer raylib.CloseWindow();

@@ -7,24 +7,27 @@ const Allocator = std.mem.Allocator;
 const Vector2 = maths.Vector2;
 const Rect = maths.Rect;
 const RenderTrait = traits.RenderTrait;
+const ArrayList = std.ArrayList;
 
 pub const background_color = raylib.BLACK;
 var render_texture: raylib.RenderTexture2D = undefined;
-var render_queue: std.ArrayList(*const RenderTrait) = undefined;
+var render_queue: std.AutoHashMap(i16, *ArrayList(*const RenderTrait)) = undefined;
+var allocator: Allocator = undefined;
 
 const RendererError = error{renderItemNotFound};
 
-pub fn init(allocator: Allocator) !void {
+pub fn init(alloc: Allocator) !void {
     raylib.InitWindow(project_settings.window_size.x, project_settings.window_size.y, project_settings.game_name);
     raylib.SetTargetFPS(project_settings.target_fps);
 
     render_texture = raylib.LoadRenderTexture(project_settings.window_size.x, project_settings.window_size.y);
-    defer raylib.UnloadRenderTexture(render_texture);
+    render_queue = std.AutoHashMap(i16, *ArrayList(*const RenderTrait)).init(alloc);
 
-    render_queue = std.ArrayList(*const RenderTrait).init(allocator);
+    allocator = alloc;
 }
 
 pub fn deinit() void {
+    raylib.UnloadRenderTexture(render_texture);
     render_queue.deinit();
 }
 
@@ -32,9 +35,12 @@ pub fn render() !void {
     raylib.BeginTextureMode(render_texture);
     raylib.ClearBackground(background_color);
 
-    for (render_queue.items) |render_trait| {
-        std.debug.print("Render an element\n", .{});
-        try render_trait.render(render_trait.ptr);
+    var iterator = render_queue.iterator();
+
+    while (iterator.next()) |entry| {
+        for (entry.value_ptr.*.items) |render_trait| {
+            try render_trait.render(render_trait.ptr);
+        }
     }
 
     raylib.EndTextureMode();
@@ -51,19 +57,33 @@ pub fn render() !void {
     raylib.EndDrawing();
 }
 
-pub fn addToRenderQueue(render_trait: *const RenderTrait) !void {
-    std.debug.print("Render trait at adress {*} added to render queue\n", .{render_trait});
-    std.debug.print("Render queue is at adress {*}\n", .{&render_queue});
-    try render_queue.append(render_trait);
+pub fn addToRenderQueue(render_trait: *RenderTrait) !void {
+    if (render_queue.get(render_trait.z_layer)) |array| {
+        try array.append(render_trait);
+    } else {
+        const ptr = try allocator.create(ArrayList(*const RenderTrait));
+        ptr.* = ArrayList(*const RenderTrait).init(allocator);
+        try ptr.*.append(render_trait);
+        try render_queue.put(render_trait.z_layer, ptr);
+    }
 }
 
-pub fn removeFromRenderQueue(render_trait: *const RenderTrait) !void {
-    for (render_queue.items, 0..) |item, i| {
-        if (item.ptr == render_trait.ptr) {
-            try render_queue.swapRemove(i);
-            return;
-        }
-    }
+pub fn removeFromRenderQueue(render_trait: *RenderTrait) !void {
+    if (render_queue.get(render_trait.z_layer)) |array| {
+        for (array.items, 0..) |elem, i| {
+            if (elem != render_trait) {
+                continue;
+            }
 
-    return RendererError.renderItemNotFound;
+            if (array.items.len - 1 == i) {
+                _ = array.pop();
+            } else {
+                _ = array.orderedRemove(i);
+            }
+
+            break;
+        }
+    } else {
+        return RendererError.renderItemNotFound;
+    }
 }
