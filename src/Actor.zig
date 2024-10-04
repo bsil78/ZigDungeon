@@ -4,6 +4,7 @@ const raylib = engine.raylib;
 const Level = @import("Level.zig");
 const ActorAction = @import("ActorAction.zig");
 const ActionPreview = @import("ActionPreview.zig");
+const traits = engine.traits;
 const Actor = @This();
 
 const Tilemap = engine.tiles.Tilemap;
@@ -28,6 +29,7 @@ pub const ActionType = enum {
     Attack,
 };
 
+render_trait: traits.RenderTrait = undefined,
 event_emitter: EventEmitter(ActorEvents) = undefined,
 sprite: Sprite = undefined,
 next_action: ?ActorAction = null,
@@ -40,7 +42,6 @@ pub fn init(texture_path: []const u8, cell: Vector2(i16), actor_type: ActorType,
     var actor = Actor{ .cell = cell, .actor_type = actor_type };
     actor.sprite = Sprite.init(texture_path);
     actor.event_emitter = try EventEmitter(ActorEvents).init(allocator);
-
     return actor;
 }
 

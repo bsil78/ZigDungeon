@@ -14,6 +14,7 @@ pub fn main() !void {
     const allocator = arena.allocator();
 
     try engine.init();
+    defer engine.deinit();
 
     var character = try Actor.init("sprites/character/Character.png", Vector2(i16).One(), Actor.ActorType.Character, allocator);
     var enemy = try Actor.init("sprites/character/Enemy.png", Vector2(i16).init(2, 1), Actor.ActorType.Enemy, allocator);

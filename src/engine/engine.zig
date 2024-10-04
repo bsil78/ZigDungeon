@@ -15,17 +15,20 @@ var current_timestamp = program_start_timestamp;
 pub var random: std.Random = undefined;
 pub var process_time: f32 = 0.0;
 pub var delta: f32 = 0.0;
+var arena: std.heap.ArenaAllocator = undefined;
 
 pub fn init() !void {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
+    arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const allocator = arena.allocator();
 
     try core.globals.init();
     try events.engine_events.init(allocator);
-
     try core.renderer.init(allocator);
-    defer core.renderer.deinit();
+}
+
+pub fn deinit() void {
+    core.renderer.deinit();
+    arena.deinit();
 }
 
 pub fn mainLoop() !void {
