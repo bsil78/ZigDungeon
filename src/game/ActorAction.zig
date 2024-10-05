@@ -25,7 +25,7 @@ pub fn init(allocator: Allocator, level: *Level, caster: *Actor, action_type: Ac
         .level = level,
         .caster = caster,
         .action_type = action_type,
-        .cell_transform = CellTransform.init(cell, null),
+        .cell_transform = CellTransform.init(cell, &level.tilemap.transform),
         .allocator = allocator,
     };
 
