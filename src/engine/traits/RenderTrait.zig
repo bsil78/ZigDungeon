@@ -11,10 +11,10 @@ const RenderTrait = @This();
 
 ptr: *anyopaque,
 render: *const fn (ptr: *anyopaque) anyerror!void,
-z_layer: i16 = 0,
+z_layer: i16,
 allocator: Allocator,
 
-pub fn init(allocator: Allocator, ptr: anytype) !*RenderTrait {
+pub fn init(allocator: Allocator, ptr: anytype, z_layer: i16) !*RenderTrait {
     const T = @TypeOf(ptr);
     const ptr_info = @typeInfo(T);
     const trait_ptr = try allocator.create(RenderTrait);
@@ -29,6 +29,7 @@ pub fn init(allocator: Allocator, ptr: anytype) !*RenderTrait {
     trait_ptr.* = .{
         .ptr = ptr,
         .render = gen.render,
+        .z_layer = z_layer,
         .allocator = allocator,
     };
 

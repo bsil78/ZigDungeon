@@ -18,8 +18,7 @@ pivot: Vector2(f32) = Vector2(f32).Zero(),
 pub fn init(allocator: Allocator, texture_path: []const u8, parent_transform: ?*Transform, z_layer: i16) !*Sprite {
     const texture = raylib.LoadTexture(texture_path.ptr);
     const ptr = try allocator.create(Sprite);
-    const render_trait = try traits.RenderTrait.init(allocator, ptr);
-    render_trait.z_layer = z_layer;
+    const render_trait = try traits.RenderTrait.init(allocator, ptr, z_layer);
 
     ptr.* = Sprite{
         .texture = texture,

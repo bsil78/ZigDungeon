@@ -1,7 +1,8 @@
 const std = @import("std");
-const engine = @import("engine/engine.zig");
+const engine = @import("../engine/engine.zig");
 const ActorAction = @import("ActorAction.zig");
 const Level = @import("Level.zig");
+const Sprite = engine.sprites.Sprite;
 const ActionPreview = @This();
 
 const Tilemap = engine.tiles.Tilemap;
@@ -9,19 +10,31 @@ const raylib = engine.raylib;
 const trigo = engine.maths.trigo;
 const Rect = engine.maths.Rect;
 const Vector2 = engine.maths.Vector.Vector2;
+const Allocator = std.mem.Allocator;
 
 const arrow_texture_path = "sprites/ui/EnemyActions/Arrow.png";
 
+allocator: Allocator,
 cell: Vector2(i16),
 action: *ActorAction,
-arrow_texture: raylib.Texture2D = undefined,
+sprite: *Sprite,
 
-pub fn init(cell: Vector2(i16), action: *ActorAction) ActionPreview {
-    return ActionPreview{
+pub fn init(allocator: Allocator, cell: Vector2(i16), action: *ActorAction) !*ActionPreview {
+    const ptr = try allocator.create(ActionPreview);
+
+    ptr.* = .{
+        .allocator = allocator,
         .cell = cell,
         .action = action,
-        .arrow_texture = raylib.LoadTexture(arrow_texture_path),
+        .sprite = try Sprite.init(allocator, arrow_texture_path, null, 2),
     };
+
+    return ptr;
+}
+
+pub fn deinit(self: *ActionPreview) !void {
+    try self.sprite.deinit();
+    self.allocator.destroy(self);
 }
 
 pub fn draw(self: *const ActionPreview, level: *Level) void {

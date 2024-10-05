@@ -13,6 +13,7 @@ const Action = enum(u8) {
 
 action: u8 = 0x00,
 
+/// Read players inputs
 pub fn read() Inputs {
     var inputs = Inputs{};
 
@@ -24,15 +25,18 @@ pub fn read() Inputs {
     return inputs;
 }
 
-pub fn hasAction(self: Inputs) bool {
+/// Retrun true if at least one action is being pressed
+pub fn hasAction(self: *const Inputs) bool {
     return (self.action != 0x00);
 }
 
-pub fn isActionPressed(self: Inputs, action: Action) bool {
+/// Return true if the gi en action is pressed
+pub fn isActionPressed(self: *const Inputs, action: Action) bool {
     return ((self.action & @intFromEnum(action)) != 0x00);
 }
 
-pub fn getDirection(self: Inputs) Vector2(f32) {
+/// Get input movement direction as a Vector2(f32)
+pub fn getDirection(self: *const Inputs) Vector2(f32) {
     const right: i4 = @intCast(@intFromBool(self.isActionPressed(Action.move_right)));
     const left: i4 = @intCast(@intFromBool(self.isActionPressed(Action.move_left)));
     const up: i4 = @intCast(@intFromBool(self.isActionPressed(Action.move_up)));
@@ -41,10 +45,11 @@ pub fn getDirection(self: Inputs) Vector2(f32) {
     return Vector2(f32).init(
         @floatFromInt(right - left),
         @floatFromInt(down - up),
-    );
+    ).normalized();
 }
 
-pub fn print(self: Inputs) void {
+/// Print the currently pressed action
+pub fn print(self: *const Inputs) void {
     inline for (@typeInfo(Action).Enum.fields) |field| {
         const action: Action = @enumFromInt(field.value);
         if (self.isActionPressed(action)) {

@@ -70,20 +70,16 @@ pub fn addToRenderQueue(render_trait: *RenderTrait) !void {
 
 pub fn removeFromRenderQueue(render_trait: *RenderTrait) !void {
     if (render_queue.get(render_trait.z_layer)) |array| {
+        std.debug.print("Layer found: {d}\n", .{render_trait.z_layer});
         for (array.items, 0..) |elem, i| {
-            if (elem != render_trait) {
+            if (elem.ptr != render_trait.ptr) {
                 continue;
             }
 
-            if (array.items.len - 1 == i) {
-                _ = array.pop();
-            } else {
-                _ = array.orderedRemove(i);
-            }
-
-            break;
+            std.debug.print("Elem found  at index {d} & removed\n", .{i});
+            _ = array.swapRemove(i);
+            return;
         }
-    } else {
-        return RendererError.renderItemNotFound;
     }
+    return RendererError.renderItemNotFound;
 }

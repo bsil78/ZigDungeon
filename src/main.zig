@@ -1,7 +1,7 @@
 const std = @import("std");
 const engine = @import("engine/engine.zig");
-const Level = @import("Level.zig");
-const Actor = @import("Actor.zig");
+const Level = @import("game/Level.zig");
+const Actor = @import("game/Actor.zig");
 const raylib = engine.core.raylib;
 const Tileset = engine.tiles.Tileset;
 const Tilemap = engine.tiles.Tilemap;
@@ -20,14 +20,14 @@ pub fn main() !void {
 
     level.tilemap.center(project_settings.window_rect);
 
-    const character = try Actor.init(allocator, "sprites/character/Character.png", Vector2(i16).One(), Actor.ActorType.Character, &level);
-    const enemy = try Actor.init(allocator, "sprites/character/Enemy.png", Vector2(i16).init(2, 1), Actor.ActorType.Enemy, &level);
+    const character = try Actor.init(allocator, "sprites/character/Character.png", Vector2(i16).One(), Actor.ActorType.Character, level);
+    const enemy = try Actor.init(allocator, "sprites/character/Enemy.png", Vector2(i16).init(2, 1), Actor.ActorType.Enemy, level);
 
     try level.addActor(character);
     try level.addActor(enemy);
 
     while (!raylib.WindowShouldClose()) {
-        try engine.mainLoop();  
+        try engine.mainLoop();
     }
 
     defer raylib.CloseWindow();

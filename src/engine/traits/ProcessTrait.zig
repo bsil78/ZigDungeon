@@ -19,8 +19,8 @@ pub fn init(ptr: anytype) ProcessTrait {
         }
     };
 
-    const progress_callback = callbacks.CallbackType{ .procedure = callbacks.CallbackProcedure.init(gen.process) };
-    globals.event_emitter.subscribe(globals.GlobalEvents.process, progress_callback);
+    const callback = callbacks.CallbackType{ .procedure = callbacks.CallbackProcedure.init(gen.process) };
+    globals.event_emitter.subscribe(globals.GlobalEvents.process, callback);
 
     return .{
         .ptr = ptr,

@@ -1,20 +1,21 @@
 const std = @import("std");
-const engine = @import("engine/engine.zig");
+const engine = @import("../engine/engine.zig");
 const Actor = @import("Actor.zig");
 const ActorAction = @import("ActorAction.zig");
 const Level = @This();
 
+const randomizer = engine.maths.randomizer;
 const raylib = engine.raylib;
-const globals = engine.core.globals;
 const callbacks = engine.events.callbacks;
 const EventEmitter = engine.EventEmitter;
 const Vector = engine.maths.Vector;
 const Vector2 = Vector.Vector2;
 const Tilemap = engine.tiles.Tilemap;
 const Tileset = engine.tiles.Tileset;
-const Inputs = engine.core.inputs;
+const Inputs = engine.core.Inputs;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
+const traits = engine.traits;
 
 const LevelError = error{ UnreachableTile, NonExistingActor };
 
@@ -23,30 +24,31 @@ pub const ActorType = enum { Character, Enemy };
 allocator: Allocator,
 tilemap: *Tilemap,
 actors: ArrayList(*Actor),
+input_trait: traits.InputTrait = undefined,
 
-pub const ActorContext = struct {
-    level: *Level,
-    actor: *Actor,
-};
+pub fn init(allocator: Allocator, level_png_path: []const u8, sprite_sheet_path: []const u8) !*Level {
+    const ptr = try allocator.create(Level);
+    const tileset = try Tileset.initFromSpriteSheet(allocator, sprite_sheet_path);
 
-pub fn init(allocator: Allocator, level_png_path: []const u8, sprite_sheet_path: []const u8) !Level {
-    const tileset = try Tileset.initFromSpriteSheet(sprite_sheet_path, allocator);
-    return Level{
+    ptr.* = .{
         .tilemap = try Tilemap.initFromPngFile(allocator, level_png_path, tileset),
         .actors = ArrayList(*Actor).init(allocator),
         .allocator = allocator,
+        .input_trait = try traits.InputTrait.init(ptr),
     };
+
+    return ptr;
 }
 
 pub fn deinit(self: *Level) !void {
     try self.tilemap.deinit();
 }
 
+/// Add an actor to be handled by this level
 pub fn addActor(self: *Level, actor: *Actor) !void {
     try self.actors.append(actor);
 
-    const context = ActorContext{ .level = self, .actor = actor };
-    const callback = try callbacks.CallbackSubscribeContext.init(self.allocator, ActorContext, onActorDied, context);
+    const callback = try callbacks.CallbackSubscribeContext.init(Level, Actor, onActorDied, self, actor);
     const callback_type = callbacks.CallbackType{ .sub_context = callback };
     try actor.event_emitter.subscribe(Actor.ActorEvents.Died, callback_type);
 }
@@ -71,14 +73,14 @@ pub fn input(self: *Level, inputs: *const Inputs) !void {
         }
 
         var dir: Vector2(f32) = inputs.getDirection();
-        const dest_cell = actor.cell.add(&dir.intFromFloat(i16));
+        const dest_cell = actor.cell_transform.cell.add(&dir.intFromFloat(i16));
 
         if (self.getActorOnCell(dest_cell)) |target| {
             try actor.attack(target);
         } else if (try self.isCellWalkable(dest_cell)) {
             actor.move(dest_cell);
         } else {
-            return LevelError.UnreachableTile;
+            return;
         }
     }
 
@@ -100,7 +102,7 @@ pub fn isCellWalkable(self: *Level, cell: Vector2(i16)) Tilemap.TilemapError!boo
 
 pub fn getActorOnCell(self: *Level, cell: Vector2(i16)) ?*Actor {
     for (self.actors.items) |actor| {
-        if (cell.equal(&actor.cell)) {
+        if (cell.equal(&actor.cell_transform.cell)) {
             return actor;
         }
     }
@@ -112,7 +114,7 @@ fn actorGetAccessibleCells(self: *Level, allocator: Allocator, actor: *Actor) !A
     var array = ArrayList(Vector2(i16)).init(allocator);
 
     for (Vector.CardinalDirections(i16)) |dir| {
-        const dest_cell = actor.cell.add(&dir);
+        const dest_cell = actor.cell_transform.cell.add(&dir);
         if (try self.isCellWalkable(dest_cell)) {
             try array.append(dest_cell);
         }
@@ -135,10 +137,17 @@ fn enemiesPlanActions(self: *Level) !void {
             continue;
         }
 
-        const rdm_id = globals.random.int(usize) % cells.items.len;
+        const random = try randomizer.random();
+        const rdm_id = random.int(usize) % cells.items.len;
 
         const dest_cell = cells.items[rdm_id];
-        actor.planAction(self, Actor.ActionType.Move, dest_cell);
+        actor.next_action = try ActorAction.init(
+            self.allocator,
+            self,
+            @constCast(actor),
+            Actor.ActionType.Move,
+            dest_cell,
+        );
     }
 }
 
@@ -150,12 +159,15 @@ fn enemiesResolveActions(self: *Level) !void {
 
         if (actor.next_action) |action| {
             try action.resolve();
+            try action.deinit();
+            actor.next_action = null;
         }
     }
 }
 
 // Event callbacks
-fn onActorDied(context: *ActorContext) !void {
-    std.debug.print("Actor of type {s} died\n", .{@tagName(context.actor.actor_type)});
-    try context.level.removeActor(context.actor);
+
+fn onActorDied(self: *Level, actor: *Actor) !void {
+    std.debug.print("Actor of type {s} died\n", .{@tagName(actor.actor_type)});
+    try self.removeActor(actor);
 }

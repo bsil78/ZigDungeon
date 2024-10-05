@@ -21,7 +21,6 @@ pub fn init() !void {
     arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const allocator = arena.allocator();
 
-    try core.globals.init();
     try events.engine_events.init(allocator);
     try core.renderer.init(allocator);
 }
@@ -36,10 +35,12 @@ pub fn mainLoop() !void {
     try engine_events.event_emitter.emit(engine_events.EngineEvents.Process);
 
     // Read input events
-    const inputs = core.inputs.read();
+    const inputs = core.Inputs.read();
 
-    // Call global inputs event
-    try engine_events.event_emitter.emitWithContext(engine_events.EngineEvents.Inputs, &inputs);
+    if (inputs.hasAction()) {
+        // Call global inputs event
+        try engine_events.event_emitter.emitWithContext(engine_events.EngineEvents.Inputs, &inputs);
+    }
 
     // Render the game frame
     try core.renderer.render();

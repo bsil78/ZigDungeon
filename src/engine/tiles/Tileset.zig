@@ -37,7 +37,7 @@ const Tile = struct {
     }
 };
 
-pub fn initFromSpriteSheet(png_file_path: []const u8, allocator: Allocator) !Tileset {
+pub fn initFromSpriteSheet(allocator: Allocator, png_file_path: []const u8) !Tileset {
     var tileset = Tileset{
         .sprite_sheet = raylib.LoadTexture(png_file_path.ptr),
         .tiles = ArrayList(Tile).init(allocator),
