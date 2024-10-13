@@ -15,8 +15,8 @@ allocator: Allocator,
 level: *Level,
 caster: *Actor,
 action_type: ActionType,
-cell_transform: CellTransform,
 preview: ?*ActionPreview = null,
+target_cell: ?Vector2(i16) = null,
 
 pub fn init(allocator: Allocator, level: *Level, caster: *Actor, action_type: ActionType, cell: Vector2(i16)) !*ActorAction {
     const ptr = try allocator.create(ActorAction);
@@ -25,11 +25,11 @@ pub fn init(allocator: Allocator, level: *Level, caster: *Actor, action_type: Ac
         .level = level,
         .caster = caster,
         .action_type = action_type,
-        .cell_transform = CellTransform.init(cell, &level.tilemap.transform),
         .allocator = allocator,
+        .target_cell = cell,
     };
 
-    ptr.*.preview = try ActionPreview.init(allocator, cell, ptr);
+    ptr.*.preview = try ActionPreview.init(allocator, cell, ptr, level.tilemap);
 
     return ptr;
 }
@@ -42,10 +42,10 @@ pub fn deinit(self: *const ActorAction) !void {
 }
 
 pub fn resolve(self: *const ActorAction) !void {
+    const cell = self.target_cell.?;
+
     switch (self.action_type) {
         ActionType.Move => {
-            const cell = self.cell_transform.cell;
-
             if (self.level.getActorOnCell(cell)) |target| {
                 try self.caster.attack(target);
             } else if (try self.level.isCellWalkable(cell)) {
@@ -55,7 +55,7 @@ pub fn resolve(self: *const ActorAction) !void {
             }
         },
         ActionType.Attack => {
-            if (self.level.getActorOnCell(self.cell_transform.cell)) |target| {
+            if (self.level.getActorOnCell(cell)) |target| {
                 try self.caster.attack(target);
             }
         },

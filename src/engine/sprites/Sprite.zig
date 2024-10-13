@@ -2,6 +2,7 @@ const std = @import("std");
 const raylib = @import("../core/raylib.zig");
 const maths = @import("../maths/maths.zig");
 const traits = @import("../traits/traits.zig");
+const Color = @import("../color/Color.zig");
 const Vector2 = maths.Vector.Vector2;
 const Rect = maths.Rect;
 const Transform = maths.Transform;
@@ -15,10 +16,10 @@ transform: Transform = Transform{},
 size: Vector2(f32),
 pivot: Vector2(f32) = Vector2(f32).Zero(),
 
-pub fn init(allocator: Allocator, texture_path: []const u8, parent_transform: ?*Transform, z_layer: i16) !*Sprite {
+pub fn init(allocator: Allocator, texture_path: []const u8, parent_transform: ?*Transform, z_layer: i16, tint: Color) !*Sprite {
     const texture = raylib.LoadTexture(texture_path.ptr);
     const ptr = try allocator.create(Sprite);
-    const render_trait = try traits.RenderTrait.init(allocator, ptr, z_layer);
+    const render_trait = try traits.RenderTrait.init(allocator, ptr, z_layer, tint);
 
     ptr.* = Sprite{
         .texture = texture,
@@ -44,9 +45,9 @@ pub fn render(self: *Sprite) void {
     raylib.DrawTexturePro(
         self.texture,
         Rect(f32).initV(Vector2(f32).Zero(), self.size).toRaylib(),
-        Rect(f32).initV(trans.position, self.size.times(trans.scale)).toRaylib(),
+        Rect(f32).initV(trans.position.add(self.pivot), self.size.times(trans.scale)).toRaylib(),
         self.pivot.toRaylib(),
         trans.rotation,
-        raylib.WHITE,
+        self.render_trait.tint,
     );
 }

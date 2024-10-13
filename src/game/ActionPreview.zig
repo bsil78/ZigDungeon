@@ -6,6 +6,7 @@ const CellTransform = @import("CellTransform.zig");
 const Sprite = engine.sprites.Sprite;
 const ActionPreview = @This();
 
+const Color = @import("../engine/color/Color.zig");
 const Tilemap = engine.tiles.Tilemap;
 const raylib = engine.raylib;
 const trigo = engine.maths.trigo;
@@ -16,27 +17,31 @@ const Allocator = std.mem.Allocator;
 const arrow_texture_path = "sprites/ui/EnemyActions/Arrow.png";
 
 allocator: Allocator,
-cell: Vector2(i16),
+cell_transform: CellTransform,
 action: *ActorAction,
 sprite: *Sprite,
 
-pub fn init(allocator: Allocator, cell: Vector2(i16), action: *ActorAction) !*ActionPreview {
+pub fn init(allocator: Allocator, cell: Vector2(i16), action: *ActorAction, tilemap: *Tilemap) !*ActionPreview {
     const ptr = try allocator.create(ActionPreview);
 
     ptr.* = .{
         .allocator = allocator,
-        .cell = cell,
+        .cell_transform = CellTransform.init(cell, &tilemap.transform),
         .action = action,
         .sprite = try Sprite.init(
             allocator,
             arrow_texture_path,
-            &action.cell_transform.transform,
+            &ptr.cell_transform.transform,
             2,
+            Color.red,
         ),
     };
 
-    const dir = ptr.action.caster.cell_transform.cell.directionTo(&cell);
-    ptr.action.cell_transform.transform.rotation = trigo.radToDeg(f32, dir.angle());
+    const caster = ptr.action.caster;
+    const dir = caster.cell_transform.cell.directionTo(&cell);
+    ptr.cell_transform.transform.rotation = trigo.radToDeg(f32, dir.angle());
+
+    ptr.sprite.render_trait.tint = Color.red.toRaylib();
 
     ptr.sprite.pivot = Vector2(f32).initOneValue(16);
 

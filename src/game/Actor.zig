@@ -8,6 +8,7 @@ const CellTransform = @import("CellTransform.zig");
 const traits = engine.traits;
 const Actor = @This();
 
+const Color = @import("../engine/color/Color.zig");
 const Tilemap = engine.tiles.Tilemap;
 const events = engine.events;
 const Allocator = std.mem.Allocator;
@@ -50,7 +51,7 @@ pub fn init(allocator: Allocator, texture_path: []const u8, cell: Vector2(i16), 
         .cell_transform = CellTransform.init(cell, parent_trans),
         .event_emitter = try EventEmitter(ActorEvents).init(allocator),
         .allocator = allocator,
-        .sprite = try Sprite.init(allocator, texture_path, &ptr.*.cell_transform.transform, 1),
+        .sprite = try Sprite.init(allocator, texture_path, &ptr.*.cell_transform.transform, 1, Color.white),
     };
 
     return ptr;

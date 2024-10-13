@@ -36,7 +36,7 @@ pub fn initFromPngFile(allocator: Allocator, file_path: []const u8, tileset: Til
         .tileset = tileset,
         .tiles = ArrayList(TileType).init(allocator),
         .grid_size = Vector2(u32).init(@intCast(image.height), @intCast(image.width)),
-        .render_trait = try traits.RenderTrait.init(allocator, ptr, 0),
+        .render_trait = try traits.RenderTrait.autoInit(allocator, ptr, 0),
         .allocator = allocator,
     };
 
