@@ -26,11 +26,6 @@ pub const ActorType = enum {
     Enemy,
 };
 
-pub const ActionType = enum {
-    Move,
-    Attack,
-};
-
 allocator: Allocator = undefined,
 event_emitter: EventEmitter(ActorEvents) = undefined,
 sprite: *Sprite = undefined,
