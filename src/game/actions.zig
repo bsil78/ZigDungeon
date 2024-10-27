@@ -87,3 +87,23 @@ pub const MoveAction = struct {
         return ActionPreview{ .move = try MoveActionPreview.init(allocator, dir, self.to, self.level.tilemap) };
     }
 };
+
+pub const ShootAction = struct {
+    caster: *Actor,
+    direction: Vector2(i16),
+    level: *Level,
+
+    pub fn resolve(self: *const ShootAction) !void {
+        
+    }
+
+    fn getActionArea(self: *const ShootAction) ?ActionArea {
+        
+    }
+};
+
+
+const ActionArea = struct {
+    trajectory: ?[]Vector2(i16),
+    area_of_effect: ?[]Vector2(i16),
+};
