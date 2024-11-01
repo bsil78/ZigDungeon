@@ -9,6 +9,7 @@ const Color = engine.Color;
 const Tilemap = engine.tiles.Tilemap;
 const Vector2 = engine.maths.Vector2;
 const Allocator = std.mem.Allocator;
+const ArrayList = std.ArrayList;
 
 const arrow_texture_path = "sprites/ui/EnemyActions/Arrow.png";
 
@@ -94,14 +95,28 @@ pub const ShootAction = struct {
     level: *Level,
 
     pub fn resolve(self: *const ShootAction) !void {
-        
+        var buffer: [100]Vector2(i16) = undefined;
+        var fba = std.heap.FixedBufferAllocator.init(&buffer);
+        const action_area = self.getActionArea(fba.allocator());
+        self.level.getActorsInArea(action_area.area_of_effect);
     }
 
-    fn getActionArea(self: *const ShootAction) ?ActionArea {
-        
+    fn getActionArea(self: *const ShootAction, allocator: Allocator) ActionArea {
+        const trajectory = ArrayList(Vector2(i16)).init(allocator);
+
+        var current_cell = self.caster.cell_transform.cell.add(self.direction);
+
+        while (self.level.isCellFree(current_cell)) {
+            current_cell = self.caster.cell_transform.cell.add(self.direction);
+            trajectory.append(current_cell);
+        }
+
+        return .{
+            .trajectory = trajectory.items,
+            .area_of_effect = [1]Vector2(i16){current_cell},
+        };
     }
 };
-
 
 const ActionArea = struct {
     trajectory: ?[]Vector2(i16),
