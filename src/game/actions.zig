@@ -98,7 +98,10 @@ pub const ShootAction = struct {
         var buffer: [100]Vector2(i16) = undefined;
         var fba = std.heap.FixedBufferAllocator.init(&buffer);
         const action_area = self.getActionArea(fba.allocator());
-        self.level.getActorsInArea(action_area.area_of_effect);
+        const targets = self.level.getActorsInArea(fba.allocator(), action_area.area_of_effect);
+        for (targets.items) |target| {
+            target.damage(1);
+        }
     }
 
     fn getActionArea(self: *const ShootAction, allocator: Allocator) ActionArea {

@@ -114,6 +114,15 @@ pub fn getActorOnCell(self: *Level, cell: Vector2(i16)) ?*Actor {
     return null;
 }
 
+pub fn getActorsInArea(self: *Level, alloactor: Allocator, area: []Vector2(i16)) ArrayList(Actor) {
+    const actors = ArrayList(Actor).init(alloactor);
+    for (area) |cell| {
+        const actor = self.getActorOnCell(cell);
+        actors.append(actor);
+    }
+    return actors;
+}
+
 fn actorGetAccessibleCells(self: *Level, allocator: Allocator, actor: *Actor) !ArrayList(Vector2(i16)) {
     var array = ArrayList(Vector2(i16)).init(allocator);
 
@@ -145,11 +154,17 @@ fn enemiesPlanActions(self: *Level) !void {
         const rdm_id = random.int(usize) % cells.items.len;
 
         const dest_cell = cells.items[rdm_id];
-        actor.next_action = actions.ActorAction{ .move = actions.MoveAction{
-            .caster = actor,
-            .to = dest_cell,
-            .level = self,
-        } };
+        const possible_actions = [_]type{ actions.MoveAction, actions.ShootAction };
+        const action_id = random.int(usize) % possible_actions.len;
+        const action_type = possible_actions[action_id];
+
+        actor.next_action = switch (action_type) {
+            actions.MoveAction => actions.ActorAction{ .move = actions.MoveAction{
+                .caster = actor,
+                .to = dest_cell,
+                .level = self,
+            } },
+        };
     }
 }
 

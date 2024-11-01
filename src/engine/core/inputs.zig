@@ -9,6 +9,7 @@ const Action = enum(u8) {
     move_down = 0x02,
     move_left = 0x04,
     move_up = 0x08,
+    shoot = 0x10,
 };
 
 action: u8 = 0x00,
@@ -21,6 +22,7 @@ pub fn read() Inputs {
     if (raylib.IsKeyPressed(raylib.KEY_LEFT)) inputs.action |= @intFromEnum(Action.move_left);
     if (raylib.IsKeyPressed(raylib.KEY_DOWN)) inputs.action |= @intFromEnum(Action.move_down);
     if (raylib.IsKeyPressed(raylib.KEY_RIGHT)) inputs.action |= @intFromEnum(Action.move_right);
+    if (raylib.IsKeyPressed(raylib.KEY_S)) inputs.action |= @intFromEnum(Action.shoot);
 
     return inputs;
 }
