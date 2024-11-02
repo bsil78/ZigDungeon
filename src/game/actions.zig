@@ -10,6 +10,7 @@ const Tilemap = engine.tiles.Tilemap;
 const Vector2 = engine.maths.Vector2;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
+const RenderTrait = engine.traits.RenderTrait;
 
 const arrow_texture_path = "sprites/ui/EnemyActions/Arrow.png";
 
@@ -18,13 +19,11 @@ pub const TagActorAction = enum {
     shoot,
 };
 
-
 const ActionArea = struct {
     trajectory: ?[]Vector2(i16),
     area_of_effect: ?[]Vector2(i16),
     aoe_origin: ?Vector2(i16),
 };
-
 
 pub const ActorAction = union(TagActorAction) {
     move: MoveAction,
@@ -37,89 +36,24 @@ pub const ActorAction = union(TagActorAction) {
     }
 
     pub fn preview(self: ActorAction, allocator: Allocator) !ActionPreview {
+        return ActionPreview.init(allocator, self);
+    }
+
+    pub fn getCaster(self: ActorAction) *Actor {
         return switch (self) {
-            inline else => |case| try case.preview(allocator),
+            inline else => |case| try case.caster,
         };
     }
-};
 
-pub const ActionPreview = union(enum) {
-    move: *MoveActionPreview,
-    shoot: *ShootActionPreview,
-
-    pub fn deinit(self: ActionPreview) !void {
-        switch (self) {
-            inline else => |case| try case.deinit(),
-        }
-    }
-};
-
-/// Action Preview struct. Draw the preview of an actor's action on the map.
-pub const MoveActionPreview = struct {
-    allocator: Allocator,
-    cell_transform: CellTransform,
-    sprite: *Sprite,
-
-    pub fn init(allocator: Allocator, direction: Vector2(i16), cell: Vector2(i16), level: *Level) !*MoveActionPreview {
-        const ptr = try allocator.create(MoveActionPreview);
-
-        ptr.* = .{
-            .allocator = allocator,
-            .cell_transform = CellTransform.init(cell, &level.tilemap.transform),
-            .sprite = try Sprite.init(
-                allocator,
-                arrow_texture_path,
-                &ptr.cell_transform.transform,
-                2,
-                Color.red,
-            ),
+    pub fn getLevel(self: ActorAction) *Level {
+        return switch (self) {
+            inline else => |case| try case.level,
         };
-
-        const dir = direction.floatFromInt(f32);
-        ptr.cell_transform.transform.rotation = trigo.radToDeg(f32, dir.angle());
-        ptr.sprite.render_trait.tint = Color.red.toRaylib();
-        ptr.sprite.pivot = Vector2(f32).initOneValue(16);
-
-        return ptr;
     }
 
-    pub fn deinit(self: *const MoveActionPreview) !void {
-        try self.sprite.deinit();
-        self.allocator.destroy(self);
-    }
-};
-
-pub const ActionPreview = struct {
-    allocator: Allocator,
-    action_area: ActionArea,
-    caster: *Actor,
-    level: *Level,
-    texture_path: ?[]u8,
-    render_trait: RenderTrait,    
-
-    pub fn init(allocator: Allocator, area: ActionArea, caster: *Actor, level: *Level, text_path: ?[]u8) !ActionPreview {
-        const ptr = try allocator.create(ActionPreview);
-        ptr = .{
-            .allocator = allocator,
-            .action_area = area,
-            .caster = caster,
-            .level = level,
-            .texture_path = text_path,
-        };
-
-        return ptr;
-    }
-};
-
-pub const ShootActionPreview = struct {
-    allocator: Allocator,
-    direction: Vector2(i16),
-
-    pub fn init(allocator: Allocator, direction: Vector2(i16), caster_cell: Vector2(i16), level: *Level) !*ShootActionPreview {
-        const ptr = allocator.create(ShootActionPreview);
-        ptr.* = .{
-            .allocator = allocator,
-            .direction = direction,
+    pub fn getActionArea(self: ActorAction) !ActionArea {
+        return switch (self) {
+            inline else => |case| try case.getActionArea(),
         };
     }
 };
@@ -133,9 +67,8 @@ pub const MoveAction = struct {
         self.caster.move(self.to);
     }
 
-    pub fn preview(self: *const MoveAction, allocator: Allocator) !ActionPreview {
-        const dir: Vector2(i16) = self.to.minus(self.caster.cell_transform.cell);
-        return ActionPreview{ .move = try MoveActionPreview.init(allocator, dir, self.to, self.level.tilemap) };
+    pub fn toActorAction(self: *const MoveAction) ActorAction {
+        return ActorAction{ .move = self };
     }
 };
 
@@ -147,25 +80,21 @@ pub const ShootAction = struct {
     pub fn resolve(self: *const ShootAction) !void {
         var buffer: [100]u8 = undefined;
         var fba = std.heap.FixedBufferAllocator.init(&buffer);
-        const action_area = self.getActionArea(fba.allocator());
+        const action_area = try self.getActionArea(fba.allocator());
         const targets = try self.level.getActorsInArea(fba.allocator(), action_area.area_of_effect.?);
         for (targets.items) |target| {
             try target.damage(1);
         }
     }
-    
-    pub fn preview(self: *const ShootAction) !void {
-        
-    }
-    
-    fn getActionArea(self: *const ShootAction, allocator: Allocator) ActionArea {
-        const trajectory = ArrayList(Vector2(i16)).init(allocator);
+
+    pub fn getActionArea(self: *const ShootAction, allocator: Allocator) !ActionArea {
+        var trajectory = ArrayList(Vector2(i16)).init(allocator);
 
         var current_cell = self.caster.cell_transform.cell.add(self.direction);
 
         while (try self.level.isCellFree(current_cell)) {
             current_cell = self.caster.cell_transform.cell.add(self.direction);
-            trajectory.append(current_cell);
+            try trajectory.append(current_cell);
         }
 
         return .{
@@ -173,5 +102,59 @@ pub const ShootAction = struct {
             .area_of_effect = null,
             .aoe_origin = current_cell,
         };
+    }
+
+    pub fn toActorAction(self: *const ShootAction) ActorAction {
+        return ActorAction{ .shoot = self };
+    }
+};
+
+pub const ActionPreview = struct {
+    allocator: Allocator,
+    caster: *Actor,
+    level: *Level,
+    texture_path: ?[]u8 = null,
+    cells: ArrayList(*PreviewCell),
+
+    pub fn init(allocator: Allocator, actor_action: ActorAction) !ActionPreview {
+        const ptr = try allocator.create(ActionPreview);
+        ptr = .{
+            .allocator = allocator,
+            .caster = actor_action.getCaster(),
+            .level = actor_action.getLevel(),
+            .cells = try ptr.generatePreviewCells(allocator, try actor_action.getActionArea()),
+        };
+
+        return ptr;
+    }
+
+    fn generatePreviewCells(self: *ActionPreview, allocator: Allocator, area: ActionArea) !?ArrayList(*PreviewCell) {
+        var cells = ArrayList(*PreviewCell).init(allocator);
+        for (area.area_of_effect) |cell| {
+            try cells.append(try PreviewCell.init(self.allocator, cell, Color.red, self.level, null));
+        }
+    }
+
+    pub fn deinit() !void {}
+};
+
+const PreviewCell = struct {
+    cell_transform: CellTransform,
+    color: Color,
+    texture_path: ?[]const u8,
+    sprite: Sprite,
+    render_trait: RenderTrait,
+
+    pub fn init(allocator: Allocator, cell: Vector2(i16), color: Color, level: *Level, texture_path: ?[]const u8) !*PreviewCell {
+        const ptr = try allocator.create(PreviewCell);
+        ptr = .{
+            .cell_transform = CellTransform.init(cell, level.tilemap.transform),
+            .color = Color,
+            .texture_path = texture_path,
+            .sprite = try Sprite.init(allocator, texture_path, level.tilemap.transform, 1, Color.white),
+            .render_trait = RenderTrait.init(allocator, ptr, 0, color),
+        };
+
+        return ptr;
     }
 };

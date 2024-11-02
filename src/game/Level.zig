@@ -2,7 +2,6 @@ const std = @import("std");
 const engine = @import("../engine/engine.zig");
 const Actor = @import("Actor.zig");
 const actions = @import("actions.zig");
-const ActionPreviewList = @import("ActionPreviewList.zig");
 const Level = @This();
 
 const randomizer = engine.maths.randomizer;
@@ -18,11 +17,12 @@ const enum_utils = engine.utils.enum_utils;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const traits = engine.traits;
+const ActionPreview = actions.ActionPreview;
 
 const LevelError = error{ UnreachableTile, NonExistingActor };
 pub const ActorType = enum { Character, Enemy };
 
-action_previews: ActionPreviewList,
+action_previews: ArrayList(*ActionPreview),
 allocator: Allocator,
 tilemap: *Tilemap,
 actors: ArrayList(*Actor),
@@ -37,7 +37,7 @@ pub fn init(allocator: Allocator, level_png_path: []const u8, sprite_sheet_path:
         .actors = ArrayList(*Actor).init(allocator),
         .allocator = allocator,
         .input_trait = try traits.InputTrait.init(ptr),
-        .action_previews = ActionPreviewList.init(allocator),
+        .action_previews = ArrayList(*ActionPreview).init(allocator),
     };
 
     return ptr;
@@ -88,9 +88,16 @@ pub fn input(self: *Level, inputs: *const Inputs) !void {
     }
 
     try self.enemiesResolveActions();
-    try self.action_previews.clear();
+    self.action_previews.clearAndFree();
     try self.enemiesPlanActions();
-    try self.action_previews.feed(self.actors);
+    try self.updatePreviews();
+}
+
+fn updatePreviews(self: *Level) !void {
+    self.action_previews.clearAndFree();
+    for (self.actors.items) |actor| {
+        try self.action_previews.append(actor);
+    }
 }
 
 pub fn isCellFree(self: *Level, cell: Vector2(i16)) Tilemap.TilemapError!bool {
