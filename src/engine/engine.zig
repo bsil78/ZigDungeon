@@ -6,6 +6,7 @@ pub const events = @import("events/events.zig");
 pub const tiles = @import("tiles/tiles.zig");
 pub const traits = @import("traits/traits.zig");
 pub const Color = @import("color/Color.zig");
+pub const utils = @import("utils/utils.zig");
 pub const raylib = core.raylib;
 const engine_events = events.engine_events;
 

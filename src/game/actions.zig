@@ -16,11 +16,19 @@ const arrow_texture_path = "sprites/ui/EnemyActions/Arrow.png";
 pub const TagActorAction = enum {
     move,
     shoot,
-}; 
+};
 
-pub const ActorAction = union(enum) {
-    TagActorAction.move: MoveAction,
-    TagActorAction.shooot: ShootAction,
+
+const ActionArea = struct {
+    trajectory: ?[]Vector2(i16),
+    area_of_effect: ?[]Vector2(i16),
+    aoe_origin: ?Vector2(i16),
+};
+
+
+pub const ActorAction = union(TagActorAction) {
+    move: MoveAction,
+    shoot: ShootAction,
 
     pub fn resolve(self: ActorAction) !void {
         switch (self) {
@@ -37,6 +45,7 @@ pub const ActorAction = union(enum) {
 
 pub const ActionPreview = union(enum) {
     move: *MoveActionPreview,
+    shoot: *ShootActionPreview,
 
     pub fn deinit(self: ActionPreview) !void {
         switch (self) {
@@ -51,12 +60,12 @@ pub const MoveActionPreview = struct {
     cell_transform: CellTransform,
     sprite: *Sprite,
 
-    pub fn init(allocator: Allocator, direction: Vector2(i16), cell: Vector2(i16), tilemap: *Tilemap) !*MoveActionPreview {
+    pub fn init(allocator: Allocator, direction: Vector2(i16), cell: Vector2(i16), level: *Level) !*MoveActionPreview {
         const ptr = try allocator.create(MoveActionPreview);
 
         ptr.* = .{
             .allocator = allocator,
-            .cell_transform = CellTransform.init(cell, &tilemap.transform),
+            .cell_transform = CellTransform.init(cell, &level.tilemap.transform),
             .sprite = try Sprite.init(
                 allocator,
                 arrow_texture_path,
@@ -77,6 +86,41 @@ pub const MoveActionPreview = struct {
     pub fn deinit(self: *const MoveActionPreview) !void {
         try self.sprite.deinit();
         self.allocator.destroy(self);
+    }
+};
+
+pub const ActionPreview = struct {
+    allocator: Allocator,
+    action_area: ActionArea,
+    caster: *Actor,
+    level: *Level,
+    texture_path: ?[]u8,
+    render_trait: RenderTrait,    
+
+    pub fn init(allocator: Allocator, area: ActionArea, caster: *Actor, level: *Level, text_path: ?[]u8) !ActionPreview {
+        const ptr = try allocator.create(ActionPreview);
+        ptr = .{
+            .allocator = allocator,
+            .action_area = area,
+            .caster = caster,
+            .level = level,
+            .texture_path = text_path,
+        };
+
+        return ptr;
+    }
+};
+
+pub const ShootActionPreview = struct {
+    allocator: Allocator,
+    direction: Vector2(i16),
+
+    pub fn init(allocator: Allocator, direction: Vector2(i16), caster_cell: Vector2(i16), level: *Level) !*ShootActionPreview {
+        const ptr = allocator.create(ShootActionPreview);
+        ptr.* = .{
+            .allocator = allocator,
+            .direction = direction,
+        };
     }
 };
 
@@ -109,7 +153,11 @@ pub const ShootAction = struct {
             try target.damage(1);
         }
     }
-
+    
+    pub fn preview(self: *const ShootAction) !void {
+        
+    }
+    
     fn getActionArea(self: *const ShootAction, allocator: Allocator) ActionArea {
         const trajectory = ArrayList(Vector2(i16)).init(allocator);
 
@@ -122,12 +170,8 @@ pub const ShootAction = struct {
 
         return .{
             .trajectory = trajectory.items,
-            .area_of_effect = [1]Vector2(i16){current_cell},
+            .area_of_effect = null,
+            .aoe_origin = current_cell,
         };
     }
-};
-
-const ActionArea = struct {
-    trajectory: ?[]Vector2(i16),
-    area_of_effect: ?[]Vector2(i16),
 };

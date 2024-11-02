@@ -14,6 +14,7 @@ const Vector2 = Vector.Vector2;
 const Tilemap = engine.tiles.Tilemap;
 const Tileset = engine.tiles.Tileset;
 const Inputs = engine.core.Inputs;
+const enum_utils = engine.utils.enum_utils;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const traits = engine.traits;
@@ -155,17 +156,16 @@ fn enemiesPlanActions(self: *Level) !void {
         const rdm_id = random.int(usize) % cells.items.len;
 
         const dest_cell = cells.items[rdm_id];
-        const ActorAction = actions.ActorAction;
-        const action_id = random.int(usize) % possible_actions.len;
-        const action_type: type = possible_actions[action_id];
+        const TagActorAction = actions.TagActorAction;
+        const tag = try enum_utils.getRandomTag(TagActorAction);
 
-        actor.next_action = switch (action_type) {
-            actions.MoveAction => actions.ActorAction{ .move = actions.MoveAction{
+        actor.next_action = switch (tag) {
+            TagActorAction.move => actions.ActorAction{ .move = actions.MoveAction{
                 .caster = actor,
                 .to = dest_cell,
                 .level = self,
             } },
-            actions.ShootAction => actions.ActorAction{ .shoot = actions.ShootAction{
+            TagActorAction.shoot => actions.ActorAction{ .shoot = actions.ShootAction{
                 .caster = actor,
                 .direction = Vector2(i16).Right(),
                 .level = self,
