@@ -13,8 +13,14 @@ const ArrayList = std.ArrayList;
 
 const arrow_texture_path = "sprites/ui/EnemyActions/Arrow.png";
 
+pub const TagActorAction = enum {
+    move,
+    shoot,
+}; 
+
 pub const ActorAction = union(enum) {
-    move: MoveAction,
+    TagActorAction.move: MoveAction,
+    TagActorAction.shooot: ShootAction,
 
     pub fn resolve(self: ActorAction) !void {
         switch (self) {
@@ -95,12 +101,12 @@ pub const ShootAction = struct {
     level: *Level,
 
     pub fn resolve(self: *const ShootAction) !void {
-        var buffer: [100]Vector2(i16) = undefined;
+        var buffer: [100]u8 = undefined;
         var fba = std.heap.FixedBufferAllocator.init(&buffer);
         const action_area = self.getActionArea(fba.allocator());
-        const targets = self.level.getActorsInArea(fba.allocator(), action_area.area_of_effect);
+        const targets = try self.level.getActorsInArea(fba.allocator(), action_area.area_of_effect.?);
         for (targets.items) |target| {
-            target.damage(1);
+            try target.damage(1);
         }
     }
 
@@ -109,7 +115,7 @@ pub const ShootAction = struct {
 
         var current_cell = self.caster.cell_transform.cell.add(self.direction);
 
-        while (self.level.isCellFree(current_cell)) {
+        while (try self.level.isCellFree(current_cell)) {
             current_cell = self.caster.cell_transform.cell.add(self.direction);
             trajectory.append(current_cell);
         }
