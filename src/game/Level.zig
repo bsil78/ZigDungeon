@@ -175,8 +175,8 @@ fn enemiesPlanActions(self: *Level) !void {
 
         actor.next_action = switch (tag) {
             TagActorAction.move => actions.ActorAction{ .move = try actions.MoveAction.init(self.allocator, actor, self, dest_cell) },
-            else => return,
             //TagActorAction.shoot => actions.ActorAction{ .shoot = try actions.ShootAction.init(self.allocator, actor, self, Vector2(i16).Right()) },
+            else => return,
         };
     }
 }

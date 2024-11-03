@@ -47,7 +47,7 @@ pub const ActorAction = union(TagActorAction) {
         }
     }
 
-    pub fn preview(self: ActorAction, allocator: Allocator) !*ActionPreview {
+    pub fn preview(self: *const ActorAction, allocator: Allocator) !*ActionPreview {
         return try ActionPreview.init(allocator, self);
     }
 
@@ -106,7 +106,7 @@ pub const ShootAction = struct {
     action_area: ActionArea = undefined,
 
     pub fn init(allocator: Allocator, caster: *Actor, level: *Level, direction: Vector2(i16)) !*ShootAction {
-        const ptr = allocator.create(ShootAction);
+        const ptr = try allocator.create(ShootAction);
         ptr.* = .{
             .caster = caster,
             .level = level,
@@ -147,20 +147,17 @@ pub const ShootAction = struct {
 
 pub const ActionPreview = struct {
     allocator: Allocator,
-    caster: *Actor,
-    level: *Level,
-    texture_path: ?[]u8 = null,
-    cells: ?ArrayList(*PreviewCell),
+    action: *const ActorAction,
+    cells: ?ArrayList(*PreviewCell) = null,
 
-    pub fn init(allocator: Allocator, actor_action: ActorAction) !*ActionPreview {
-        const ptr = try allocator.create(ActionPreview);
+    pub fn init(allocator: Allocator, actor_action: *const ActorAction) !*ActionPreview {
+        var ptr = try allocator.create(ActionPreview);
         ptr.* = .{
             .allocator = allocator,
-            .caster = actor_action.getCaster(),
-            .level = actor_action.getLevel(),
-            .cells = try ptr.generatePreviewCells(allocator, actor_action.getActionArea()),
+            .action = actor_action,
         };
 
+        ptr.cells = try ptr.generatePreviewCells(allocator, actor_action.getActionArea());
         return ptr;
     }
 
@@ -175,8 +172,14 @@ pub const ActionPreview = struct {
 
     fn generatePreviewCells(self: *ActionPreview, allocator: Allocator, area: *const ActionArea) !?ArrayList(*PreviewCell) {
         var cells = ArrayList(*PreviewCell).init(allocator);
+
+        const color: Color, const texture_path: ?[]const u8 = switch (self.action.*) {
+            .move => .{ Color.blue, arrow_texture_path },
+            else => .{ Color.red, null },
+        };
+
         for (area.area_of_effect.?.items) |cell| {
-            try cells.append(try PreviewCell.init(self.allocator, cell, Color.red, self.level, null));
+            try cells.append(try PreviewCell.init(self.allocator, cell, color, self.action.getLevel(), texture_path));
         }
         return cells;
     }
