@@ -90,13 +90,15 @@ pub fn input(self: *Level, inputs: *const Inputs) !void {
     try self.enemiesResolveActions();
     self.action_previews.clearAndFree();
     try self.enemiesPlanActions();
-    try self.updatePreviews();
+    try self.updatePreviews(self.allocator);
 }
 
-fn updatePreviews(self: *Level) !void {
+fn updatePreviews(self: *Level, allocator: Allocator) !void {
     self.action_previews.clearAndFree();
     for (self.actors.items) |actor| {
-        try self.action_previews.append(actor);
+        if (actor.next_action) |action| {
+            try self.action_previews.append(try action.preview(allocator));
+        }
     }
 }
 
@@ -167,16 +169,8 @@ fn enemiesPlanActions(self: *Level) !void {
         const tag = try enum_utils.getRandomTag(TagActorAction);
 
         actor.next_action = switch (tag) {
-            TagActorAction.move => actions.ActorAction{ .move = actions.MoveAction{
-                .caster = actor,
-                .to = dest_cell,
-                .level = self,
-            } },
-            TagActorAction.shoot => actions.ActorAction{ .shoot = actions.ShootAction{
-                .caster = actor,
-                .direction = Vector2(i16).Right(),
-                .level = self,
-            } },
+            TagActorAction.move => actions.ActorAction{ .move = actions.MoveAction.init(self.allocator, actor, self, dest_cell) },
+            TagActorAction.shoot => actions.ActorAction{ .shoot = actions.ShootAction.init(self.allocator, actor, self, Vector2(i16).Right()) },
         };
     }
 }

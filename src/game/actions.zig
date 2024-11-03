@@ -20,9 +20,19 @@ pub const TagActorAction = enum {
 };
 
 const ActionArea = struct {
-    trajectory: ?[]Vector2(i16),
-    area_of_effect: ?[]Vector2(i16),
-    aoe_origin: ?Vector2(i16),
+    trajectory: ?ArrayList(Vector2(i16)) = null,
+    area_of_effect: ?ArrayList(Vector2(i16)) = null,
+    aoe_origin: ?Vector2(i16) = null,
+
+    pub fn deinit(self: *ActionArea) void {
+        if (self.trajectory) |traj| {
+            traj.deinit();
+        }
+
+        if (self.area_of_effect) |aoe| {
+            aoe.deinit();
+        }
+    }
 };
 
 pub const ActorAction = union(TagActorAction) {
@@ -41,13 +51,13 @@ pub const ActorAction = union(TagActorAction) {
 
     pub fn getCaster(self: ActorAction) *Actor {
         return switch (self) {
-            inline else => |case| try case.caster,
+            inline else => |case| case.caster,
         };
     }
 
     pub fn getLevel(self: ActorAction) *Level {
         return switch (self) {
-            inline else => |case| try case.level,
+            inline else => |case| case.level,
         };
     }
 
@@ -60,15 +70,26 @@ pub const ActorAction = union(TagActorAction) {
 
 pub const MoveAction = struct {
     caster: *Actor,
-    to: Vector2(i16),
     level: *Level,
+    action_area: ActionArea = undefined,
 
-    pub fn resolve(self: *const MoveAction) !void {
-        self.caster.move(self.to);
+    pub fn init(allocator: Allocator, caster: *Actor, level: *Level, to: Vector2(i16)) !MoveAction {
+        return MoveAction{
+            .caster = caster,
+            .level = level,
+            .action_area = generateActionArea(allocator, to),
+        };
     }
 
-    pub fn toActorAction(self: *const MoveAction) ActorAction {
-        return ActorAction{ .move = self };
+    pub fn resolve(self: *const MoveAction) !void {
+        self.caster.move(self.action_area.aoe_origin.?);
+    }
+
+    fn generateActionArea(allocator: Allocator, to: Vector2(i16)) !ActionArea {
+        return .{
+            .aoe_origin = to,
+            .area_of_effect = try ArrayList(Vector2(i16)).init(allocator).append(to),
+        };
     }
 };
 
@@ -76,18 +97,28 @@ pub const ShootAction = struct {
     caster: *Actor,
     direction: Vector2(i16),
     level: *Level,
+    action_area: ActionArea,
+
+    pub fn init(allocator: Allocator, caster: *Actor, level: *Level, direction: Vector2(i16)) !ActionArea {
+        var action = ActionArea{
+            .caster = caster,
+            .level = level,
+            .direction = direction,
+        };
+        action.action_area = try action.generateActionArea(allocator);
+        return action;
+    }
 
     pub fn resolve(self: *const ShootAction) !void {
         var buffer: [100]u8 = undefined;
         var fba = std.heap.FixedBufferAllocator.init(&buffer);
-        const action_area = try self.getActionArea(fba.allocator());
-        const targets = try self.level.getActorsInArea(fba.allocator(), action_area.area_of_effect.?);
+        const targets = try self.level.getActorsInArea(fba.allocator(), self.action_area.area_of_effect.?.items);
         for (targets.items) |target| {
             try target.damage(1);
         }
     }
 
-    pub fn getActionArea(self: *const ShootAction, allocator: Allocator) !ActionArea {
+    fn generateActionArea(self: *const ShootAction, allocator: Allocator) !ActionArea {
         var trajectory = ArrayList(Vector2(i16)).init(allocator);
 
         var current_cell = self.caster.cell_transform.cell.add(self.direction);
@@ -98,14 +129,10 @@ pub const ShootAction = struct {
         }
 
         return .{
-            .trajectory = trajectory.items,
-            .area_of_effect = null,
+            .trajectory = trajectory,
             .aoe_origin = current_cell,
+            .area_of_effect = try ArrayList(Vector2(i16)).init(allocator).append(current_cell),
         };
-    }
-
-    pub fn toActorAction(self: *const ShootAction) ActorAction {
-        return ActorAction{ .shoot = self };
     }
 };
 
@@ -118,7 +145,7 @@ pub const ActionPreview = struct {
 
     pub fn init(allocator: Allocator, actor_action: ActorAction) !ActionPreview {
         const ptr = try allocator.create(ActionPreview);
-        ptr = .{
+        ptr.* = .{
             .allocator = allocator,
             .caster = actor_action.getCaster(),
             .level = actor_action.getLevel(),
