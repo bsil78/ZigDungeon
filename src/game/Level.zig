@@ -86,15 +86,20 @@ pub fn input(self: *Level, inputs: *const Inputs) !void {
             return;
         }
     }
-
+    std.debug.print("Inputs handled", .{});
     try self.enemiesResolveActions();
-    self.action_previews.clearAndFree();
     try self.enemiesPlanActions();
     try self.updatePreviews(self.allocator);
 }
 
 fn updatePreviews(self: *Level, allocator: Allocator) !void {
-    self.action_previews.clearAndFree();
+    if (self.action_previews.items.len > 0) {
+        for (self.action_previews.items) |preview| {
+            try preview.deinit();
+        }
+        try self.action_previews.resize(0);
+    }
+
     for (self.actors.items) |actor| {
         if (actor.next_action) |action| {
             try self.action_previews.append(try action.preview(allocator));
@@ -169,8 +174,9 @@ fn enemiesPlanActions(self: *Level) !void {
         const tag = try enum_utils.getRandomTag(TagActorAction);
 
         actor.next_action = switch (tag) {
-            TagActorAction.move => actions.ActorAction{ .move = actions.MoveAction.init(self.allocator, actor, self, dest_cell) },
-            TagActorAction.shoot => actions.ActorAction{ .shoot = actions.ShootAction.init(self.allocator, actor, self, Vector2(i16).Right()) },
+            TagActorAction.move => actions.ActorAction{ .move = try actions.MoveAction.init(self.allocator, actor, self, dest_cell) },
+            else => return,
+            //TagActorAction.shoot => actions.ActorAction{ .shoot = try actions.ShootAction.init(self.allocator, actor, self, Vector2(i16).Right()) },
         };
     }
 }
