@@ -47,7 +47,7 @@ pub fn render(self: *Sprite) void {
         Rect(f32).initV(Vector2(f32).Zero(), self.size).toRaylib(),
         Rect(f32).initV(trans.position.add(self.pivot), self.size.times(trans.scale)).toRaylib(),
         self.pivot.toRaylib(),
-        trans.rotation,
+        maths.trigo.radToDeg(f32, trans.rotation),
         self.render_trait.tint,
     );
 }

@@ -179,7 +179,13 @@ pub const ActionPreview = struct {
         };
 
         for (area.area_of_effect.?.items) |cell| {
-            try cells.append(try PreviewCell.init(self.allocator, cell, color, self.action.getLevel(), texture_path));
+            var preview_cell = try PreviewCell.init(self.allocator, cell, color, self.action.getLevel(), texture_path);
+            const caster = self.action.getCaster();
+            const caster_cell = caster.cell_transform.cell;
+            const dest_cell = area.aoe_origin.?;
+            var dir = dest_cell.minus(caster_cell).floatFromInt(f32);
+            preview_cell.cell_transform.transform.rotation = dir.angle();
+            try cells.append(preview_cell);
         }
         return cells;
     }
@@ -204,7 +210,9 @@ const PreviewCell = struct {
         };
 
         if (texture_path) |path| {
-            ptr.sprite = try Sprite.init(allocator, path, &level.tilemap.transform, 1, Color.white);
+            ptr.sprite = try Sprite.init(allocator, path, &ptr.cell_transform.transform, 1, Color.white);
+            var sprite = ptr.sprite.?;
+            sprite.pivot = sprite.size.divide(2.0);
         }
 
         return ptr;
