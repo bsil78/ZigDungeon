@@ -129,9 +129,10 @@ pub const ShootAction = struct {
         var trajectory = ArrayList(Vector2(i16)).init(allocator);
 
         var current_cell = self.caster.cell_transform.cell.add(self.direction);
+        try trajectory.append(current_cell);
 
-        while (try self.level.isCellFree(current_cell)) {
-            current_cell = self.caster.cell_transform.cell.add(self.direction);
+        while (try self.level.isCellWalkable(current_cell)) {
+            current_cell = current_cell.add(self.direction);
             try trajectory.append(current_cell);
         }
         var aoe = ArrayList(Vector2(i16)).init(allocator);
@@ -173,18 +174,33 @@ pub const ActionPreview = struct {
     fn generatePreviewCells(self: *ActionPreview, allocator: Allocator, area: *const ActionArea) !?ArrayList(*PreviewCell) {
         var cells = ArrayList(*PreviewCell).init(allocator);
 
+        const trajectory_color = Color.init(255, 0, 0, 127);
         const color: Color, const texture_path: ?[]const u8 = switch (self.action.*) {
             .move => .{ Color.blue, arrow_texture_path },
             else => .{ Color.red, null },
         };
 
+        if (area.trajectory) |trajectory| {
+            for (trajectory.items) |cell| {
+                const preview_cell = try PreviewCell.init(self.allocator, cell, trajectory_color, self.action.getLevel(), texture_path);
+                try cells.append(preview_cell);
+            }
+        }
+
         for (area.area_of_effect.?.items) |cell| {
             var preview_cell = try PreviewCell.init(self.allocator, cell, color, self.action.getLevel(), texture_path);
-            const caster = self.action.getCaster();
-            const caster_cell = caster.cell_transform.cell;
-            const dest_cell = area.aoe_origin.?;
-            var dir = dest_cell.minus(caster_cell).floatFromInt(f32);
-            preview_cell.cell_transform.transform.rotation = dir.angle();
+
+            switch (self.action.*) {
+                TagActorAction.move => {
+                    const caster = self.action.getCaster();
+                    const caster_cell = caster.cell_transform.cell;
+                    const dest_cell = area.aoe_origin.?;
+                    var dir = dest_cell.minus(caster_cell).floatFromInt(f32);
+                    preview_cell.cell_transform.transform.rotation = dir.angle();
+                },
+                else => {},
+            }
+
             try cells.append(preview_cell);
         }
         return cells;
