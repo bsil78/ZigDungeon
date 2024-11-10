@@ -1,12 +1,13 @@
 const std = @import("std");
+const raylib = engine.core.raylib;
 const engine = @import("engine/engine.zig");
+const project_settings = engine.core.project_settings;
 const Level = @import("game/Level.zig");
 const Actor = @import("game/Actor.zig");
-const raylib = engine.core.raylib;
+const Combat = @import("game/Combat.zig");
 const Tileset = engine.tiles.Tileset;
 const Tilemap = engine.tiles.Tilemap;
 const Vector2 = engine.maths.Vector.Vector2;
-const project_settings = engine.core.project_settings;
 
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -25,6 +26,9 @@ pub fn main() !void {
 
     try level.addActor(character);
     try level.addActor(enemy);
+
+    var combat = try Combat.init(allocator, level);
+    defer combat.deinit();
 
     while (!raylib.WindowShouldClose()) {
         try engine.mainLoop();
