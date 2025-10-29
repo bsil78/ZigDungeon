@@ -5,25 +5,28 @@ const CallbackType = @import("callbacks.zig").CallbackType;
 const Self = @This();
 
 const Allocator = std.mem.Allocator;
-const ArrayList = std.ArrayList;
 const HashMap = std.AutoHashMap;
+const CallbacksArrayList = std.ArrayList(CallbackType);
 
 pub fn EventEmitter(EventEnum: type) type {
     return struct {
         const This = @This();
         listeners: Listeners(EventEnum),
+        allocator: Allocator,
 
-        pub fn Listeners(EnumType: type) type {
-            return HashMap(@typeInfo(EnumType).@"enum".tag_type, ArrayList(CallbackType));
+        fn Listeners(EnumType: type) type {
+            return HashMap(@typeInfo(EnumType).@"enum".tag_type, CallbacksArrayList);
         }
 
-        pub fn init(allocator: Allocator) !This {
-            var emitter = .{
+        pub fn init(allocator: Allocator) !EventEmitter(EventEnum){
+            var emitter:EventEmitter(EventEnum) = .{
                 .listeners = Listeners(EventEnum).init(allocator),
+                .allocator = allocator
             };
 
-            inline for (@typeInfo(EventEnum).@"enum".fields) |field| {
-                try emitter.listeners.put(field.value, ArrayList(CallbackType).init(allocator));
+            inline for (@typeInfo(EventEnum).@"enum".fields) |field|{
+                const arrayList = try CallbacksArrayList.initCapacity(allocator, 4);
+                try emitter.listeners.put(field.value,arrayList);
             }
 
             return emitter;
@@ -31,7 +34,7 @@ pub fn EventEmitter(EventEnum: type) type {
 
         pub fn subscribe(self: *This, event: EventEnum, callback: CallbackType) !void {
             var callbacks_array = self.getCallbacksArray(event).?;
-            try callbacks_array.append(callback);
+            callbacks_array.appendAssumeCapacity(callback);
         }
 
         pub fn unsubscribe(self: *This, event: EventEnum, callback: CallbackType) !void {
@@ -68,7 +71,7 @@ pub fn EventEmitter(EventEnum: type) type {
             }
         }
 
-        fn getCallbacksArray(self: *This, event: EventEnum) ?*ArrayList(CallbackType) {
+        fn getCallbacksArray(self: *This, event: EventEnum) ?*CallbacksArrayList {
             const key = @intFromEnum(event);
             return self.listeners.getPtr(key);
         }

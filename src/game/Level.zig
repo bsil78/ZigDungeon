@@ -29,7 +29,7 @@ pub fn init(allocator: Allocator, level_png_path: []const u8, sprite_sheet_path:
 
     ptr.* = .{
         .tilemap = try Tilemap.initFromPngFile(allocator, level_png_path, tileset),
-        .actors = ArrayList(*Actor).init(allocator),
+        .actors = try ArrayList(*Actor).initCapacity(allocator,16),
         .allocator = allocator,
     };
 
@@ -41,7 +41,7 @@ pub fn deinit(self: *Level) !void {
 }
 
 pub fn addActor(self: *Level, actor: *Actor) !void {
-    try self.actors.append(actor);
+    self.actors.appendAssumeCapacity(actor);
 
     const callback = try callbacks.CallbackSubscribeContext.init(Level, Actor, onActorDied, self, actor);
     const callback_type = callbacks.CallbackType{ .sub_context = callback };
@@ -80,10 +80,10 @@ pub fn getActorOnCell(self: *Level, cell: Vector2(i16)) ?*Actor {
 }
 
 pub fn getActorsInArea(self: *Level, alloactor: Allocator, area: []Vector2(i16)) !ArrayList(*Actor) {
-    var actors = ArrayList(*Actor).init(alloactor);
+    var actors = try ArrayList(*Actor).initCapacity(alloactor,16);
     for (area) |cell| {
         if (self.getActorOnCell(cell)) |actor| {
-            try actors.append(actor);
+            actors.appendAssumeCapacity(actor);
         }
     }
     return actors;
@@ -91,12 +91,12 @@ pub fn getActorsInArea(self: *Level, alloactor: Allocator, area: []Vector2(i16))
 
 /// Get the accessible cells adjacents to the given cell
 pub fn getAccessibleCells(self: *Level, allocator: Allocator, cell: Vector2(i16)) !ArrayList(Vector2(i16)) {
-    var array = ArrayList(Vector2(i16)).init(allocator);
+    var array = try ArrayList(Vector2(i16)).initCapacity(allocator,8);
 
     for (Vector.CardinalDirections(i16)) |dir| {
         const dest_cell = cell.add(&dir);
         if (try self.isCellWalkable(dest_cell)) {
-            try array.append(dest_cell);
+            array.appendAssumeCapacity(dest_cell);
         }
     }
 

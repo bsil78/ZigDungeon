@@ -92,9 +92,9 @@ pub const MoveAction = struct {
     fn generateActionArea(allocator: Allocator, to: Vector2(i16)) !ActionArea {
         var action_area = ActionArea{
             .aoe_origin = to,
-            .area_of_effect = ArrayList(Vector2(i16)).init(allocator),
+            .area_of_effect = try ArrayList(Vector2(i16)).initCapacity(allocator,64),
         };
-        try action_area.area_of_effect.?.append(to);
+        action_area.area_of_effect.?.appendAssumeCapacity(to);
         return action_area;
     }
 };
@@ -126,17 +126,17 @@ pub const ShootAction = struct {
     }
 
     fn generateActionArea(self: *const ShootAction, allocator: Allocator) !ActionArea {
-        var trajectory = ArrayList(Vector2(i16)).init(allocator);
+        var trajectory = try ArrayList(Vector2(i16)).initCapacity(allocator,64);
 
         var current_cell = self.caster.cell_transform.cell.add(self.direction);
-        try trajectory.append(current_cell);
+        trajectory.appendAssumeCapacity(current_cell);
 
         while (try self.level.isCellWalkable(current_cell)) {
             current_cell = current_cell.add(self.direction);
-            try trajectory.append(current_cell);
+            trajectory.appendAssumeCapacity(current_cell);
         }
-        var aoe = ArrayList(Vector2(i16)).init(allocator);
-        try aoe.append(current_cell);
+        var aoe = try ArrayList(Vector2(i16)).initCapacity(allocator,1);
+        aoe.appendAssumeCapacity(current_cell);
 
         return .{
             .trajectory = trajectory,
@@ -172,7 +172,7 @@ pub const ActionPreview = struct {
     }
 
     fn generatePreviewCells(self: *ActionPreview, allocator: Allocator, area: *const ActionArea) !?ArrayList(*PreviewCell) {
-        var cells = ArrayList(*PreviewCell).init(allocator);
+        var cells = try ArrayList(*PreviewCell).initCapacity(allocator,16);
 
         const trajectory_color = Color.init(255, 0, 0, 127);
         const color: Color, const texture_path: ?[]const u8 = switch (self.action.*) {
@@ -183,7 +183,7 @@ pub const ActionPreview = struct {
         if (area.trajectory) |trajectory| {
             for (trajectory.items) |cell| {
                 const preview_cell = try PreviewCell.init(self.allocator, cell, trajectory_color, self.action.getLevel(), texture_path);
-                try cells.append(preview_cell);
+                cells.appendAssumeCapacity(preview_cell);
             }
         }
 
@@ -201,7 +201,7 @@ pub const ActionPreview = struct {
                 else => {},
             }
 
-            try cells.append(preview_cell);
+            cells.appendAssumeCapacity(preview_cell);
         }
         return cells;
     }

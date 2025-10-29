@@ -1,5 +1,5 @@
 const std = @import("std");
-const raylib = @import("../core/raylib.zig");
+const raylib = @import("../core/raylib.zig").raylib;
 
 /// Create a Vector2 as follows: Vector2{x: T, y: T}
 pub fn Vector2(T: type) type {

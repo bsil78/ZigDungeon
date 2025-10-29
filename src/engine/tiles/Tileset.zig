@@ -1,11 +1,11 @@
 const std = @import("std");
-const raylib = @import("../core/raylib.zig");
+const raylib = @import("../core/raylib.zig").raylib;
 const maths = @import("../maths/maths.zig");
 const Tileset = @This();
 
 const Allocator = std.mem.Allocator;
+pub const TilesArrayList = std.ArrayList(Tile);
 const Texture = raylib.struct_Texture;
-const ArrayList = std.ArrayList;
 const Vector2 = maths.Vector2;
 const Rect = maths.Rect;
 
@@ -14,7 +14,7 @@ const TileError = error{OutOfBound};
 tile_width: u32 = 32,
 tile_height: u32 = 32,
 sprite_sheet: Texture,
-tiles: ArrayList(Tile),
+tiles: TilesArrayList,
 
 const Tile = struct {
     sheet_x: f32,
@@ -40,7 +40,7 @@ const Tile = struct {
 pub fn initFromSpriteSheet(allocator: Allocator, png_file_path: []const u8) !Tileset {
     var tileset = Tileset{
         .sprite_sheet = raylib.LoadTexture(png_file_path.ptr),
-        .tiles = ArrayList(Tile).init(allocator),
+        .tiles = try Tileset.TilesArrayList.initCapacity(allocator,64),
     };
 
     const sprite_sheet_w: u8 = @intCast(tileset.sprite_sheet.width);
@@ -68,7 +68,7 @@ pub fn initFromSpriteSheet(allocator: Allocator, png_file_path: []const u8) !Til
             }
 
             // Add valid tiles to tiles list
-            try tileset.tiles.append(Tile{
+            tileset.tiles.appendAssumeCapacity(Tile{
                 .sheet_x = x,
                 .sheet_y = y,
                 .width = @floatFromInt(tileset.tile_width),

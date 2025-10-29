@@ -1,4 +1,4 @@
-const raylib = @import("../core/raylib.zig");
+const raylib = @import("../core/raylib.zig").raylib;
 const maths = @import("maths.zig");
 const Vector = maths.Vector;
 const Vector2 = maths.Vector.Vector2;

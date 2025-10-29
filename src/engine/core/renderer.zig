@@ -1,5 +1,5 @@
 const std = @import("std");
-const raylib = @import("raylib.zig");
+const raylib = @import("raylib.zig").raylib;
 const project_settings = @import("project_settings.zig");
 const maths = @import("../maths/maths.zig");
 const traits = @import("../traits/traits.zig");
@@ -59,11 +59,11 @@ pub fn render() !void {
 
 pub fn addToRenderQueue(render_trait: *RenderTrait) !void {
     if (render_queue.get(render_trait.z_layer)) |array| {
-        try array.append(render_trait);
+        array.appendAssumeCapacity(render_trait);
     } else {
         const ptr = try allocator.create(ArrayList(*const RenderTrait));
-        ptr.* = ArrayList(*const RenderTrait).init(allocator);
-        try ptr.*.append(render_trait);
+        ptr.* = try ArrayList(*const RenderTrait).initCapacity(allocator,16);
+        ptr.*.appendAssumeCapacity(render_trait);
         try render_queue.put(render_trait.z_layer, ptr);
     }
 }

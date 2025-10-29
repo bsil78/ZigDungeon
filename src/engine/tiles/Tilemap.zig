@@ -34,7 +34,7 @@ pub fn initFromPngFile(allocator: Allocator, file_path: []const u8, tileset: Til
 
     ptr.* = Tilemap{
         .tileset = tileset,
-        .tiles = ArrayList(TileType).init(allocator),
+        .tiles = try ArrayList(TileType).initCapacity(allocator,256),
         .grid_size = Vector2(u32).init(@intCast(image.height), @intCast(image.width)),
         .render_trait = try traits.RenderTrait.autoInit(allocator, ptr, 0),
         .allocator = allocator,
@@ -44,7 +44,7 @@ pub fn initFromPngFile(allocator: Allocator, file_path: []const u8, tileset: Til
         for (0..ptr.grid_size.x) |row| {
             const color: raylib.struct_Color = raylib.GetImageColor(image, @intCast(row), @intCast(column));
             const tile = if (color.r == 0.0) TileType.Ground else TileType.Wall;
-            try ptr.*.tiles.append(tile);
+            ptr.*.tiles.appendAssumeCapacity(tile);
         }
     }
 

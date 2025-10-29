@@ -1,6 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
-const raylib = @import("../core/raylib.zig");
+const raylib = @import("../core/raylib.zig").raylib;
 const fmt = std.fmt;
 const Color = @This();
 

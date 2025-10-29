@@ -25,7 +25,7 @@ pub fn init(allocator: Allocator, level: *Level) !*Combat {
         .level = level,
         .allocator = allocator,
         .input_trait = try traits.InputTrait.init(ptr),
-        .action_previews = ArrayList(*ActionPreview).init(allocator),
+        .action_previews = try ArrayList(*ActionPreview).initCapacity(allocator,4),
     };
 
     return ptr;
@@ -66,12 +66,12 @@ fn updatePreviews(self: *Combat, allocator: Allocator) !void {
         for (self.action_previews.items) |preview| {
             try preview.deinit();
         }
-        try self.action_previews.resize(0);
+        try self.action_previews.resize(allocator,0);
     }
 
     for (self.level.actors.items) |actor| {
         if (actor.next_action) |action| {
-            try self.action_previews.append(try action.preview(allocator));
+            self.action_previews.appendAssumeCapacity(try action.preview(allocator));
         }
     }
 }
@@ -83,7 +83,7 @@ fn enemiesPlanActions(self: *Combat) !void {
         }
 
         var cells = try self.level.getAccessibleCells(self.allocator, actor.cell_transform.cell);
-        defer cells.deinit();
+        defer cells.deinit(self.allocator);
 
         if (cells.items.len == 0) {
             actor.next_action = null;

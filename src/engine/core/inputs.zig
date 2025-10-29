@@ -1,5 +1,5 @@
 const std = @import("std");
-const raylib = @import("raylib.zig");
+const raylib = @import("raylib.zig").raylib;
 const maths = @import("../maths/maths.zig");
 const Vector2 = maths.Vector2;
 const Inputs = @This();
