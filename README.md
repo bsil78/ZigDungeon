@@ -1,10 +1,10 @@
 # ZigDungeon
 
-A port to Zig 0.15.2 of a dungeon game made with Zig and Raylib by MrBSmith alias Babadesbois 💛
+A port to Zig 0.16.0-dev and and rework in DOD/ECS style of a pre-0.15 zig OOP dungeon game made with Raylib by MrBSmith alias Babadesbois 💛
 
 ## Prerequisites
 
-- [Zig](https://ziglang.org/) (0.15.2)
+- [Zig](https://ziglang.org/) (0.16.0)
 - Git
 - SSH key configured with GitHub eventually (for raylib notably)
 

@@ -1,50 +1,55 @@
 const std = @import("std");
-pub const core = @import("core/core.zig");
-pub const maths = @import("maths/maths.zig");
-pub const sprites = @import("sprites/sprites.zig");
-pub const events = @import("events/events.zig");
-pub const tiles = @import("tiles/tiles.zig");
-pub const traits = @import("traits/traits.zig");
-pub const Color = @import("color/Color.zig");
-pub const utils = @import("utils/utils.zig");
-pub const raylib = core.raylib;
-const engine_events = events.engine_events;
 
-const program_start_timestamp = std.time.milliTimestamp();
-var last_timestamp = 0;
-var current_timestamp = program_start_timestamp;
+const maths = @import("../libs/maths/maths.zig");
+const Color = @import("../libs/gfx/gfx.zig").Color;
+
+pub const core = @import("core/core.zig");
+pub const sprites = @import("sprites/sprites.zig");
+pub const tiles = @import("tiles/tiles.zig");
+pub const utils = @import("utils/utils.zig");
+
+var program_start_timestamp: u64 = 0;
+var last_timestamp: u64 = 0;
+var current_timestamp: u64 = 0;
 
 pub var random: std.Random = undefined;
 pub var process_time: f32 = 0.0;
 pub var delta: f32 = 0.0;
-var arena: std.heap.ArenaAllocator = undefined;
+pub var engine_allocator: std.mem.Allocator = undefined;
+pub var frames_counter: u32 = 0;
 
-pub fn init() !void {
-    arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    const allocator = arena.allocator();
+var _prng: std.Random.DefaultPrng = undefined;
+var _timer : core.GameTimer = undefined;
 
-    try events.engine_events.init(allocator);
-    try core.renderer.init(allocator);
+pub fn init(allocator: std.mem.Allocator) !void {
+    _timer = core.GameTimer.start();
+    program_start_timestamp = _timer.lap();
+    current_timestamp = program_start_timestamp;
+    last_timestamp = program_start_timestamp;
+
+    engine_allocator = allocator;
+
+    try core.renderer.init(engine_allocator);
+
+    const seed = current_timestamp;
+    _prng = std.Random.DefaultPrng.init(seed);
+    random = _prng.random();
 }
 
 pub fn deinit() void {
     core.renderer.deinit();
-    arena.deinit();
 }
 
 pub fn mainLoop() !void {
-    // Call global process event
-    try engine_events.event_emitter.emit(engine_events.EngineEvents.Process);
+    last_timestamp = current_timestamp;
+    current_timestamp = _timer.lap();
+    process_time = @as(f32, @floatFromInt(current_timestamp)) / 1000.0;
+    delta = process_time;
 
-    // Read input events
-    const inputs = core.Inputs.read();
+    frames_counter += 1;
+}
 
-    if (inputs.hasAction()) {
-        // Call global inputs event
-        try engine_events.event_emitter.emitWithContext(engine_events.EngineEvents.Inputs, &inputs);
-    }
-
-    // Render the game frame
+pub fn render() !void {
     try core.renderer.render();
 }
 
@@ -53,7 +58,6 @@ pub fn process() !void {
     current_timestamp = std.time.milliTimestamp();
 }
 
-/// Returns the amount of ms the game has been running for
 pub fn gameStartMs() i64 {
     return std.time.milliTimestamp() - program_start_timestamp;
 }

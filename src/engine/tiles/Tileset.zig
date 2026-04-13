@@ -1,13 +1,15 @@
 const std = @import("std");
-const raylib = @import("../core/raylib.zig").raylib;
-const maths = @import("../maths/maths.zig");
+const maths = @import("../../libs/maths/maths.zig");
+const Vector2 = maths.geometry.vectors.Vector2;
+const Rect = maths.geometry.shapes.Rect;
+
+const raylib = @import("../core/core.zig").raylib;
+const ToRaylib = @import("../core/core.zig").ToRaylib;
 const Tileset = @This();
 
 const Allocator = std.mem.Allocator;
 pub const TilesArrayList = std.ArrayList(Tile);
 const Texture = raylib.struct_Texture;
-const Vector2 = maths.Vector2;
-const Rect = maths.Rect;
 
 const TileError = error{OutOfBound};
 
@@ -32,8 +34,8 @@ const Tile = struct {
     }
 
     pub fn draw(self: Tile, sprite_sheet: Texture, pos: Vector2(f32)) void {
-        const rect = self.getRect().toRaylib();
-        raylib.DrawTextureRec(sprite_sheet, rect, pos.toRaylib(), raylib.WHITE);
+        const rect = ToRaylib(f32).Rectangle(&(self.getRect()));
+        raylib.DrawTextureRec(sprite_sheet, rect, ToRaylib(f32).Vector2(&(pos)), raylib.WHITE);
     }
 };
 
@@ -57,17 +59,15 @@ pub fn initFromSpriteSheet(allocator: Allocator, png_file_path: []const u8) !Til
             const y: f32 = @floatFromInt(row * tileset.tile_height);
             const w: f32 = @floatFromInt(tileset.tile_width);
             const h: f32 = @floatFromInt(tileset.tile_height);
-            const rect = Rect(f32).init(x, y, w, h).toRaylib();
+            const rect = ToRaylib(f32).Rectangle(&(Rect(f32).init(x, y, w, h)));
             const tile_image = raylib.ImageFromImage(sprite_sheet_image, rect);
             defer raylib.UnloadImage(tile_image);
             const alpha_border = raylib.GetImageAlphaBorder(tile_image, 0.01);
 
-            // Escape fully transparent tiles
             if (alpha_border.width <= 0.0 and alpha_border.height <= 0.0) {
                 continue;
             }
 
-            // Add valid tiles to tiles list
             tileset.tiles.appendAssumeCapacity(Tile{
                 .sheet_x = x,
                 .sheet_y = y,

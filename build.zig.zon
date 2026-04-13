@@ -1,21 +1,20 @@
-.{
-    .name = .ZigDungeon,
+.{ 
+    .name = .ZigDungeon, 
     .zig = .{
-        .version = "0.15.2",
-    },
-    .version = "0.0.1",
+        .version = "0.16.0-dev.0+e9b8c8e7",
+    }, 
+    .version = "0.0.1", 
     .dependencies = .{
         .raylib = .{
-            .url = "raylib",
-            .hash = "raylib-5.6.0-dev-whq8uLsvAAVGrNT1hra-faQX3KSsG19NsWBR_Nfbyosk",
+            .path = "raylib",
         },
-    },
+    }, 
     .paths = .{
         "build.zig",
         "build.zig.zon",
         "raylib",
         "README.md",
         "src",
-    },
-    .fingerprint = 0xa7919d87a88c9da
+    }, 
+    .fingerprint = 0xa7919d87a88c9da 
 }

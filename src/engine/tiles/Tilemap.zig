@@ -1,16 +1,17 @@
 const std = @import("std");
-const core = @import("../core/core.zig");
-const maths = @import("../maths/maths.zig");
-const traits = @import("../traits/traits.zig");
-const Tileset = @import("Tileset.zig");
-const Tilemap = @This();
-
-const raylib = core.raylib;
 const Allocator = std.mem.Allocator;
-const Transform = maths.Transform;
-const Rect = maths.Rect;
 const ArrayList = std.ArrayList;
-const Vector2 = maths.Vector.Vector2;
+
+const maths = @import("../../libs/maths/maths.zig");
+const Transform = maths.geometry.Transform;
+const Rect = maths.geometry.shapes.Rect;
+const Vector2 = maths.geometry.vectors.Vector2;
+
+const core = @import("../core/core.zig");
+const raylib = core.raylib;
+
+
+const Tileset = @import("Tileset.zig");
 
 const TileType = enum(u16) {
     Wall,
@@ -18,10 +19,11 @@ const TileType = enum(u16) {
     Void,
 };
 
+const Tilemap = @This();
+
 pub const TilemapError = error{OutOfBound};
 pub const tile_size = 32;
 
-render_trait: *traits.RenderTrait = undefined,
 transform: Transform = Transform{},
 tileset: Tileset,
 tiles: ArrayList(TileType) = undefined,
@@ -34,9 +36,8 @@ pub fn initFromPngFile(allocator: Allocator, file_path: []const u8, tileset: Til
 
     ptr.* = Tilemap{
         .tileset = tileset,
-        .tiles = try ArrayList(TileType).initCapacity(allocator,256),
+        .tiles = try ArrayList(TileType).initCapacity(allocator, 256),
         .grid_size = Vector2(u32).init(@intCast(image.height), @intCast(image.width)),
-        .render_trait = try traits.RenderTrait.autoInit(allocator, ptr, 0),
         .allocator = allocator,
     };
 
@@ -51,12 +52,11 @@ pub fn initFromPngFile(allocator: Allocator, file_path: []const u8, tileset: Til
     return ptr;
 }
 
-pub fn deinit(self: *Tilemap) !void {
-    try self.render_trait.deinit();
+pub fn deinit(self: *Tilemap) void {
+    self.tiles.deinit(self.allocator);
     self.allocator.destroy(self);
 }
 
-/// Print all the TileType of the tilemap in a grid like fashion
 pub fn print(self: *Tilemap) void {
     for (self.tiles.items, 0..) |tile, i| {
         if (i % self.grid_size.x == 0) {
@@ -68,7 +68,6 @@ pub fn print(self: *Tilemap) void {
     std.debug.print("\n", .{});
 }
 
-/// Draw all the tiles of the tilemap
 pub fn render(self: *Tilemap) !void {
     for (self.tiles.items, 0..) |tile, i| {
         const cell = Vector2(f32).init(@floatFromInt(i % self.grid_size.x), @floatFromInt(i / self.grid_size.x));
@@ -80,7 +79,6 @@ pub fn render(self: *Tilemap) !void {
     }
 }
 
-/// Get the rect in pixels encapsulating of all the tiles in the tilemap
 pub fn getRect(self: *Tilemap) Rect(f32) {
     const tile_width: f32 = @floatFromInt(self.tileset.tile_width);
     const tile_height: f32 = @floatFromInt(self.tileset.tile_height);
@@ -95,7 +93,6 @@ pub fn getRect(self: *Tilemap) Rect(f32) {
     );
 }
 
-/// Move this Tilemap so it is centered inside the given container rect
 pub fn center(self: *Tilemap, container_rect: Rect(f32)) void {
     const rect = self.getRect();
     const centered_rect = rect.centerRect(container_rect);

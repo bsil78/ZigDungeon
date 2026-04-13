@@ -45,7 +45,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = raylib_optimize,
     });
-    exe.linkLibrary(raylib_dep.artifact("raylib"));
+    exe.root_module.linkLibrary(raylib_dep.artifact("raylib"));
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default

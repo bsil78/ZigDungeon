@@ -1,7 +1,5 @@
 const std = @import("std");
-const raylib = @import("../core/raylib.zig").raylib;
 
-/// Create a Vector2 as follows: Vector2{x: T, y: T}
 pub fn Vector2(T: type) type {
     return struct {
         x: T,
@@ -122,11 +120,6 @@ pub fn Vector2(T: type) type {
             return to.minus(self).normalized();
         }
 
-        pub fn toRaylib(self: *const Vector2(T)) raylib.Vector2 {
-            const v = self.toFloatV(f32);
-            return raylib.Vector2{ .x = v.x, .y = v.y };
-        }
-
         pub fn cross(self: *const Vector2(T), to: *const Vector2(T)) f32 {
             return self.x * to.x - self.y * to.y;
         }
@@ -147,7 +140,7 @@ pub fn Vector2(T: type) type {
             var smallest_angle: f32 = std.math.floatMax(T);
             var nearest_dir = Vector2(T).Zero();
 
-            for (CardinalDirections(T)) |dir| {
+            for (cardinalDirections(T)) |dir| {
                 const dir_angle = @abs(self.angleTo(&dir));
                 if (dir_angle < smallest_angle) {
                     smallest_angle = dir_angle;
@@ -157,14 +150,17 @@ pub fn Vector2(T: type) type {
 
             return nearest_dir;
         }
+
+        pub fn cardinalDirections() [4]Vector2(T) {
+            return [4]Vector2(T){
+                Vector2(T).Right(),
+                Vector2(T).Down(),
+                Vector2(T).Left(),
+                Vector2(T).Up(),
+            };
+        }
+
     };
 }
 
-pub fn CardinalDirections(T: type) [4]Vector2(T) {
-    return [4]Vector2(T){
-        Vector2(T).Right(),
-        Vector2(T).Down(),
-        Vector2(T).Left(),
-        Vector2(T).Up(),
-    };
-}
+

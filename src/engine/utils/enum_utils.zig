@@ -1,6 +1,5 @@
 const std = @import("std");
-const engine = @import("../engine.zig");
-const randomizer = engine.maths.randomizer;
+const randomizer = @import("../../libs/maths").randomizer;
 
 const enumError = error{
     InvalidTag,

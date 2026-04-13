@@ -1,10 +1,7 @@
 const std = @import("std");
-const traits = @import("../traits/traits.zig");
-const ProcessTrait = traits.ProcessTrait;
 const SpriteAnimations = @import("SpriteAnimations.zig");
 const AnimatedSprite = @This();
 
-process_trait: ProcessTrait = undefined,
 sprite_animations: ?SpriteAnimations = null,
 frame: u16,
 animation_name: ?[]const u8 = null,
@@ -14,9 +11,9 @@ const AnimationError = error{
 };
 
 pub fn init() AnimatedSprite {
-    var animated_sprite = AnimatedSprite{};
-    animated_sprite.process_trait = ProcessTrait.init(&animated_sprite);
-    return animated_sprite;
+    return AnimatedSprite{
+        .frame = 0,
+    };
 }
 
 fn process(self: *AnimatedSprite) !void {

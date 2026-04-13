@@ -1,5 +1,7 @@
-const raylib = @import("../core/raylib.zig").raylib;
-const maths = @import("../maths/maths.zig");
+const maths = @import("../../libs/maths/maths.zig");
+
+const raylib = @import("../core/core.zig").raylib;
+
 const Vector2 = maths.Vector2;
 const Rect = maths.Rect;
 const SpriteSheet = @This();

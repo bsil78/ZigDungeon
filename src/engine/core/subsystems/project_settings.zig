@@ -1,6 +1,6 @@
-const maths = @import("../maths/maths.zig");
-const Vector2 = maths.Vector.Vector2;
-const Rect = maths.Rect;
+const maths = @import("../../../libs/maths/maths.zig");
+const Vector2 = maths.geometry.vectors.Vector2;
+const Rect = maths.geometry.shapes.Rect;
 
 pub const target_fps = 60;
 pub const window_size = Vector2(u32).init(960, 540);

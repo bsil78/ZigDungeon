@@ -1,7 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
-const raylib = @import("../core/raylib.zig").raylib;
 const fmt = std.fmt;
+const raylib = @import("../vendors/raylib.zig").raylib;
 const Color = @This();
 
 const ColorError = error{InvalidHexValue};
@@ -29,10 +29,6 @@ pub fn initRgb(r: u8, g: u8, b: u8) Color {
     return .{ .r = r, .g = g, .b = b, .a = 255 };
 }
 
-/// Init a color out of its hexadecimal code.
-/// The code can take a # at its start or not without any consequence.
-/// The hex code itself can be either 6 or 8 characters long, depending on if you want to precise the alpha value or not.
-/// If the hex code is 6 characters long then the color will be fully opaque by default.
 pub fn initHex(hex_code: []const u8) !Color {
     if (hex_code.len == 0) return ColorError.InvalidHexValue;
 
@@ -50,10 +46,6 @@ pub fn initHex(hex_code: []const u8) !Color {
         .b = try fmt.parseInt(u8, hex[4..6], 16),
         .a = alpha,
     };
-}
-
-pub fn toRaylib(self: *const Color) raylib.Color {
-    return raylib.Color{ .r = self.r, .g = self.g, .b = self.b, .a = self.a };
 }
 
 test initHex {
