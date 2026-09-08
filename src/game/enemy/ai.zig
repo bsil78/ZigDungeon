@@ -71,6 +71,7 @@ fn computeActionPlan(enemy: *Enemy, distances: [][]u8, world: *GameWorld) !?Acti
     return .{ .target = cells[random_index] };
 }
 
+// interface fonction for BFS algorithm
 fn isCellWalkable(context: *anyopaque, cell: Vector2(i16)) bool {
     const world: *GameWorld = @ptrCast(@alignCast(context));
     return world.isCellWalkable(cell) catch false;

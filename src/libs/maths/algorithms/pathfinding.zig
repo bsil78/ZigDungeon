@@ -5,6 +5,18 @@ const Vector2 = maths.geometry.vectors.Vector2;
 
 pub const IsWalkableFn = *const fn (context: *anyopaque, cell: Vector2(i16)) bool;
 
+
+// Computes the breadth-first distances from the target cell to all other cells in the grid.
+// It returns a 2D array of distances, where each cell contains the distance to the target cell.
+// Cells that are not reachable from the target cell will have a distance of 0xFF.
+// The function uses a queue to perform a breadth-first search, starting from the target cell and exploring its neighbors.
+// The is_walkable function is used to determine if a cell can be traversed or not ;
+// it takes a context pointer and a cell position as arguments and returns a boolean indicating whether the cell is walkable.
+// is_walkable fonction (interface) would get the form : 
+// fn isCellWalkable(context: *anyopaque, cell: Vector2(i16)) bool {
+//   const world: *GameWorld = @ptrCast(@alignCast(context));
+//   return world.isCellWalkable(cell) catch false;
+// } 
 pub fn breadthFirstDistances(
     allocator: std.mem.Allocator,
     target: Vector2(i16),
