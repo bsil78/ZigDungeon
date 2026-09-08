@@ -1,16 +1,18 @@
+// #region Namespace imports
 const std = @import("std");
-const Allocator = std.mem.Allocator;
-
 const maths = @import("../../libs/maths/maths.zig");
+const raylib = @import("../core/core.zig").raylib;
+const renderer = @import("../core/subsystems/renderer.zig");
+// #endregion
+
+// #region Concrete imports
+const Allocator = std.mem.Allocator;
 const Vector2 = maths.geometry.vectors.Vector2;
 const Rect = maths.geometry.shapes.Rect;
 const Transform = maths.geometry.Transform;
-
 const Color = @import("../../libs/gfx/gfx.zig").Color;
-
-const raylib = @import("../core/core.zig").raylib;
 const ToRaylib = @import("../core/core.zig").ToRaylib;
-const renderer = @import("../core/subsystems/renderer.zig");
+// #endregion
 
 const Sprite = @This();
 
@@ -22,8 +24,10 @@ pivot: Vector2(f32) = Vector2(f32).Zero(),
 tint: raylib.Color,
 z_layer: i16,
 
-pub fn init(allocator: Allocator, texture_path: []const u8, z_layer: i16, tint: Color) !*Sprite {
-    const texture = raylib.LoadTexture(texture_path.ptr);
+pub fn init(allocator: Allocator, image_data: []const u8, z_layer: i16, tint: Color) !*Sprite {
+    const image = raylib.LoadImageFromMemory(".png", image_data.ptr, @intCast(image_data.len));
+    defer raylib.UnloadImage(image);
+    const texture = raylib.LoadTextureFromImage(image);
     const ptr = try allocator.create(Sprite);
 
     ptr.* = Sprite{

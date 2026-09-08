@@ -1,5 +1,8 @@
+// #region Namespace imports
 const std = @import("std");
 const builtin = @import("builtin");
+// #endregion
+
 var pf: i64 = undefined;
 
 pub const GameTimer = struct {

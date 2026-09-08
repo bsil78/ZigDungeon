@@ -1,7 +1,9 @@
+// #region Namespace imports
 const maths = @import("../../libs/maths/maths.zig");
 const gfx = @import("../../libs/gfx/gfx.zig");
-
-pub const raylib = @import("../../libs/vendors/raylib.zig").raylib;
+const raylib_binding = @import("../../libs/vendors/raylib.zig");
+pub const raylib = raylib_binding.raylib;
+// #endregion
 
 pub fn ToRaylib(comptime T: type) type {
     

@@ -1,9 +1,12 @@
+// #region Namespace imports
 const std = @import("std");
-
 const maths = @import("../../../libs/maths/maths.zig");
-const Vector2 = maths.geometry.vectors.Vector2;
-
 const raylib = @import("../../vendors/raylib.zig").raylib;
+// #endregion
+
+// #region Concrete imports
+const Vector2 = maths.geometry.vectors.Vector2;
+// #endregion
 
 const Inputs = @This();
 

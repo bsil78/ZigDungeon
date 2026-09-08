@@ -1,81 +1,43 @@
 # ZigDungeon
 
-A port to Zig 0.16.0-dev and and rework in DOD/ECS style of a pre-0.15 zig OOP dungeon game made with Raylib by MrBSmith alias Babadesbois 💛
+ZigDungeon is a dungeon game made with [raylib](https://www.raylib.com/). It is
+a port to Zig 0.16.0-dev and a data-oriented rework of an earlier
+object-oriented Zig game by MrBSmith, also known as Babadesbois 💛.
 
 ## Prerequisites
 
-- [Zig](https://ziglang.org/) (0.16.0)
-- Git
-- SSH key configured with GitHub eventually (for raylib notably)
+- [Zig 0.16.0-dev](https://ziglang.org/download/)
+- [Git](https://git-scm.com/downloads)
 
-## Getting Started
+## Installation
 
-After having:
-1. Cloned the repository and moved into its directory:
-   ```
-   git clone https://github.com/bsil78/ZigDungeon.git
-   cd ZigDungeon
-   ```
+Clone the repository and initialize its raylib dependency:
 
-2. Set up raylib as a submodule:
-   ```
-   git submodule init
-   git submodule update
-   ```
-
-3. Built the project:
-   ```
-   zig build
-   ```
-
-### Build Options
-
-| Option | Command | Description |
-|--------|---------|-------------|
-| Debug (default) | `zig build -Doptimize=Debug` | Build with debug symbols |
-| Release | `zig build -Doptimize=ReleaseFast` | Optimized release build |
-| Strip symbols | `zig build -Dstrip=true` | Reduce binary size |
-
-## Running the Game
-
-After building, run the game using:
+```bash
+git clone https://github.com/bsil78/ZigDungeon.git
+cd ZigDungeon
+git submodule update --init --recursive
 ```
+
+## Launching the Game
+
+From the repository directory:
+
+```bash
 zig build run
 ```
 
-This command will:
-- Build the project if needed
-- Install required assets
-- Launch the game
+The command builds the game when necessary and launches the ZigDungeon window.
 
-You should see a window appear with "Welcome to ZigDungeon!" displayed, indicating successful setup.
+For build configuration, source organization, testing, and development
+workflow, see [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md).
 
-## Project Structure
+## License and Credits
 
-```
-ZigDungeon/
-├── src/              # Source code directory
-│   └── main.zig     # Entry point
-├── build.zig        # Zig build script
-├── build.zig.zon    # Dependencies declaration
-└── .gitmodules      # Git submodules configuration
-```
+The project is a Zig and raylib rework of the original ZigDungeon game by
+MrBSmith. raylib is provided through the repository dependency configuration.
 
-## Dependencies
+## Troubleshooting
 
-- [raylib](https://github.com/raysan5/raylib) - Game development library
-  - Automatically managed through build.zig.zon
-  - Included as a git submodule
-
-
-## Running Tests
-
-```
-zig build test
-```
-
-## Troubleshouting
-
-### If you have trouble with git downloads 
-
-Consider using https addresses for example, replace raylib one in .gitmodules eventually.
+If Git cannot download the raylib dependency, check your Git authentication
+configuration or use HTTPS URLs for the repository and its submodules.

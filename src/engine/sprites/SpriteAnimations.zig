@@ -1,4 +1,7 @@
+// #region Namespace imports
 const std = @import("std");
+// #endregion
+
 const SpriteAnimations = @This();
 
 animations: std.AutoHashMap([]const u8, Animation),

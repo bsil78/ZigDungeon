@@ -1,4 +1,10 @@
-const Vector2 = @import("vector.zig").Vector2;
+// #region Namespace imports
+const vector = @import("vector.zig");
+// #endregion
+
+// #region Concrete imports
+const Vector2 = vector.Vector2;
+// #endregion
 const Transform = @This();
 
 position: Vector2(f32) = Vector2(f32).Zero(),

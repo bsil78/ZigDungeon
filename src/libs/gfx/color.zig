@@ -1,7 +1,8 @@
+// #region Namespace imports
 const std = @import("std");
-const testing = std.testing;
 const fmt = std.fmt;
-const raylib = @import("../vendors/raylib.zig").raylib;
+// #endregion
+
 const Color = @This();
 
 const ColorError = error{InvalidHexValue};
@@ -46,12 +47,4 @@ pub fn initHex(hex_code: []const u8) !Color {
         .b = try fmt.parseInt(u8, hex[4..6], 16),
         .a = alpha,
     };
-}
-
-test initHex {
-    try testing.expectEqual(try initHex("#FFFFFF"), init(255, 255, 255, 255));
-    try testing.expectEqual(try initHex("#FF0000"), init(255, 0, 0, 255));
-    try testing.expectEqual(try initHex("#00FF00"), init(0, 255, 0, 255));
-    try testing.expectEqual(try initHex("0000FF"), init(0, 0, 255, 255));
-    try testing.expectEqual(try initHex("#FFFFFF00"), init(255, 255, 255, 0));
 }

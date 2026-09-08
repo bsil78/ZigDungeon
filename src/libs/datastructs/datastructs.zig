@@ -3,5 +3,11 @@
 // Includes:
 //   - SparseDenseSet: Generic sparse-dense set for cache-friendly component storage
 
-pub const SparseDenseSet = @import("sparse_dense_set.zig").SparseDenseSet;
-pub const SparseDenseSetType = @import("sparse_dense_set.zig").SparseDenseSetType;
+// #region Namespace imports
+const sparse_dense_set = @import("sparse_dense_set.zig");
+// #endregion
+
+// #region Concrete imports
+pub const SparseDenseSet = sparse_dense_set.SparseDenseSet;
+pub const SparseDenseSetType = sparse_dense_set.SparseDenseSetType;
+// #endregion

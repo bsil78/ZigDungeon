@@ -1,5 +1,7 @@
+// #region Namespace imports
 const std = @import("std");
-const randomizer = @import("../../libs/maths").randomizer;
+const engine = @import("../engine.zig");
+// #endregion
 
 const enumError = error{
     InvalidTag,
@@ -7,8 +9,7 @@ const enumError = error{
 
 pub fn getRandomTag(T: type) !T {
     const fields = std.meta.fields(T);
-    const random = try randomizer.random();
-    const rdm_id = random.int(usize) % fields.len;
+    const rdm_id = try engine.random.index(fields.len);
 
     inline for (fields) |field| {
         if (field.value == rdm_id) {

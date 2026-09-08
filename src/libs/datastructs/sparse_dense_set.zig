@@ -1,6 +1,11 @@
+// #region Namespace imports
 const std = @import("std");
+// #endregion
+
+// #region Concrete imports
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
+// #endregion
 
 /// Generic Sparse-Dense Component Storage
 /// Optimized for cache-friendly iteration and O(1) operations

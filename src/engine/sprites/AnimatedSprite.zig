@@ -1,5 +1,11 @@
+// #region Namespace imports
 const std = @import("std");
+// #endregion
+
+// #region Concrete imports
 const SpriteAnimations = @import("SpriteAnimations.zig");
+// #endregion
+
 const AnimatedSprite = @This();
 
 sprite_animations: ?SpriteAnimations = null,

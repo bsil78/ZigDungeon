@@ -1,18 +1,24 @@
+// #region Namespace imports
 const maths = @import("../../libs/maths/maths.zig");
-
 const raylib = @import("../core/core.zig").raylib;
+// #endregion
 
+// #region Concrete imports
 const Vector2 = maths.Vector2;
 const Rect = maths.Rect;
+// #endregion
+
 const SpriteSheet = @This();
 
 texture: raylib.Texture2D,
 columns: u16,
 lines: u16,
 
-pub fn init(texture_path: []const u8, columns: u16, lines: u16) SpriteSheet {
+pub fn init(image_data: []const u8, columns: u16, lines: u16) SpriteSheet {
+    const image = raylib.LoadImageFromMemory(".png", image_data.ptr, @intCast(image_data.len));
+    defer raylib.UnloadImage(image);
     return SpriteSheet{
-        .texture = raylib.LoadTexture(texture_path.ptr),
+        .texture = raylib.LoadTextureFromImage(image),
         .columns = columns,
         .lines = lines,
     };

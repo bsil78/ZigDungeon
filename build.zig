@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
@@ -14,7 +15,6 @@ pub fn build(b: *std.Build) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall. Here we do not
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
-
 
     const exe = b.addExecutable(.{
         .name = "ZigDungeon",
@@ -77,19 +77,48 @@ pub fn build(b: *std.Build) void {
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
-    const unit_tests = b.addTest(.{
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("test/main.zig"),
+    const test_module = b.createModule(.{
+            .root_source_file = b.path("tests/main.zig"),
             .target = target,
             .optimize = optimize,
-        }), 
+    });
+    test_module.addImport("production_random", b.createModule(.{
+        .root_source_file = b.path("src/engine/core/random.zig"),
+        .target = target,
+        .optimize = optimize,
+    }));
+    test_module.addImport("production_color", b.createModule(.{
+        .root_source_file = b.path("src/libs/gfx/color.zig"),
+        .target = target,
+        .optimize = optimize,
+    }));
+    test_module.addImport("production_geometry", b.createModule(.{
+        .root_source_file = b.path("src/libs/maths/geometry/geometry.zig"),
+        .target = target,
+        .optimize = optimize,
+    }));
+    test_module.addImport("production_sparse_dense_set", b.createModule(.{
+        .root_source_file = b.path("src/libs/datastructs/sparse_dense_set.zig"),
+        .target = target,
+        .optimize = optimize,
+    }));
+
+    const unit_tests = b.addTest(.{
+        .root_module = test_module,
     });
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
+
+    const success_message_command: []const []const u8 = if (builtin.os.tag == .windows)
+        &.{ "cmd", "/C", "echo" }
+    else
+        &.{ "echo" };
+    const success_message = b.addSystemCommand(success_message_command ++ .{"All tests passed."});
+    success_message.step.dependOn(&run_unit_tests.step);
 
     // Similar to creating the run step earlier, this exposes a `test` step to
     // the `zig build --help` menu, providing a way for the user to request
     // running the unit tests.
     const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&run_unit_tests.step);
+    test_step.dependOn(&success_message.step);
 }

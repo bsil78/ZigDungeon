@@ -1,4 +1,6 @@
+// #region Namespace imports
 const std = @import("std");
+// #endregion
 
 pub fn Vector2(T: type) type {
     return struct {
@@ -121,7 +123,9 @@ pub fn Vector2(T: type) type {
         }
 
         pub fn cross(self: *const Vector2(T), to: *const Vector2(T)) f32 {
-            return self.x * to.x - self.y * to.y;
+            const first = self.toFloatV(f32);
+            const second = to.toFloatV(f32);
+            return first.x * second.y - first.y * second.x;
         }
 
         pub fn dot(self: *const Vector2(T), to: *const Vector2(T)) f32 {
@@ -133,7 +137,7 @@ pub fn Vector2(T: type) type {
         }
 
         pub fn angleTo(self: *const Vector2(T), to: *const Vector2(T)) f32 {
-            return std.math.atan2(self.cross(to), self.cross(to));
+            return std.math.atan2(self.cross(to), self.dot(to));
         }
 
         pub fn nearestCardinalDirection(self: *const Vector2(T)) Vector2(T) {
