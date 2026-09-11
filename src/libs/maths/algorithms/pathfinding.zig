@@ -12,7 +12,7 @@ pub const IsWalkableFn = *const fn (context: *anyopaque, cell: Vector2(i16)) boo
 // The function uses a queue to perform a breadth-first search, starting from the target cell and exploring its neighbors.
 // The is_walkable function is used to determine if a cell can be traversed or not ;
 // it takes a context pointer and a cell position as arguments and returns a boolean indicating whether the cell is walkable.
-// is_walkable fonction (interface) would get the form : 
+// IsWalkableFn (interface) would get the form : 
 // fn isCellWalkable(context: *anyopaque, cell: Vector2(i16)) bool {
 //   const world: *GameWorld = @ptrCast(@alignCast(context));
 //   return world.isCellWalkable(cell) catch false;
@@ -27,6 +27,7 @@ pub fn breadthFirstDistances(
 ) ![][]u8 {
     const distances = try allocator.alloc([]u8, height);
     errdefer {
+        std.debug.print("Error with distances",.{});
         for (distances) |row| allocator.free(row);
         allocator.free(distances);
     }
@@ -39,7 +40,7 @@ pub fn breadthFirstDistances(
     var queue = try std.ArrayList(Vector2(i16)).initCapacity(allocator, width * height);
     defer queue.deinit(allocator);
 
-    try queue.append(allocator, target);
+    queue.appendAssumeCapacity(target);
     distances[@intCast(target.y)][@intCast(target.x)] = 0;
 
     var head: usize = 0;
@@ -60,9 +61,8 @@ pub fn breadthFirstDistances(
             if (!is_walkable(context, next)) continue;
 
             distances[ny][nx] = next_distance;
-            try queue.append(allocator, next);
+            queue.appendAssumeCapacity(next);
         }
     }
-
     return distances;
 }

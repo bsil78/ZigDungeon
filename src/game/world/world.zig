@@ -4,6 +4,7 @@ const maths = @import("../../libs/maths/maths.zig");
 const engine = @import("../../engine/engine.zig");
 const project_settings = @import("../project_settings.zig");
 const globals = @import("../globals.zig");
+const pathfinding = maths.algorithms.pathfinding;
 // #endregion
 
 // #region Concrete imports
@@ -14,6 +15,7 @@ const Tilemap = engine.tiles.Tilemap;
 const Tileset = engine.tiles.Tileset;
 const Character = @import("../character/character.zig").Character;
 const Enemy = @import("../enemy/enemy.zig").Enemy;
+const NPCState = @import("../enemy/action_plan.zig").NPCState;
 const Renderable = @import("../rendering/components.zig").Renderable;
 // #endregion
 
@@ -25,13 +27,16 @@ const TileType = enum(usize) {
 };
 
 
+
 pub const GameWorld = struct {
     allocator: Allocator,
     tilemap: *Tilemap,
     tiles: ArrayList(TileType) = undefined,
     character: ?Character = null,
     enemies: ArrayList(Enemy),
-    work_buffer: ArrayList(Vector2(i16)),
+    accessibleCells: ArrayList(Vector2(i16)),
+    distances : ?[][]u8 = null,
+    tick: u32 = 0,
 
     // The init function initializes the game world by creating the tilemap, character, and enemies.
     // It also sets up the work buffer for pathfinding and other operations.
@@ -50,10 +55,10 @@ pub const GameWorld = struct {
         const enemies_cells = [_]Vector2(i16){ 
             Vector2(i16).init(5, 1), 
             Vector2(i16).init(7, 3), 
-            Vector2(i16).init(3, 4) 
+            Vector2(i16).init(2, 4) 
         };
-        for (enemies_cells) |cell| {
-            const enemy = try Enemy.create(allocator, tilemap, cell);
+        for (enemies_cells,0..) |cell,i| {
+            const enemy = try Enemy.create(allocator, tilemap, cell, NPCState.Wandering, i);
             try enemies.append(allocator, enemy);      
         }
 
@@ -62,8 +67,13 @@ pub const GameWorld = struct {
             .tilemap = tilemap,
             .character = character,
             .enemies = enemies,
-            .work_buffer = try ArrayList(Vector2(i16)).initCapacity(allocator, 256),
+            .accessibleCells = try ArrayList(Vector2(i16)).initCapacity(allocator, 256),
         };
+    }
+
+    pub fn newTick(self: *GameWorld) void {
+        self.tick += 1;
+        self.deinitDistances();
     }
 
     // The tileTypeMapper function maps a color value to a corresponding TileType enum value.
@@ -79,8 +89,16 @@ pub const GameWorld = struct {
         if (self.character) |*character| character.renderable.destroySprite();
         for (self.enemies.items) |*enemy| enemy.renderable.destroySprite();
         self.enemies.deinit(self.allocator);
-        self.work_buffer.deinit(self.allocator);
+        self.accessibleCells.deinit(self.allocator);
         self.tilemap.deinit();
+    }
+
+    fn deinitDistances(self: *GameWorld) void {
+        if(self.distances) |distances|{    
+            for (distances) |row| self.allocator.free(row);
+            self.allocator.free(distances);
+            self.distances = null;
+        }
     }
 
     pub fn destroyCharacter(self: *GameWorld) void {
@@ -88,9 +106,15 @@ pub const GameWorld = struct {
         self.character = null;
     }
 
-    pub fn destroyEnemy(self: *GameWorld, index: usize) void {
-        self.enemies.items[index].renderable.destroySprite();
-        _ = self.enemies.swapRemove(index);
+    pub fn destroyEnemy(self: *GameWorld, entityId: usize) void {
+        const enemies=self.enemies.items;
+        for(enemies,0..enemies.len)|enemy,i|{
+            if(enemy.entityId==entityId){
+                enemy.renderable.destroySprite();
+                _ = self.enemies.swapRemove(i);
+                break;
+            }
+        }
     }
 
     // The getTile function retrieves the tile type at a specific cell in the game world.
@@ -109,9 +133,9 @@ pub const GameWorld = struct {
     }
 
     // The isCellOccupiedByOtherEnemy function checks if a given cell is occupied by any enemy other than the one specified by enemy_index.
-    pub fn isCellOccupiedByOtherEnemy(self: *GameWorld, cell: Vector2(i16), enemy_index: usize) bool {
-        for (self.enemies.items, 0..) |*enemy, index| {
-            if (index != enemy_index and enemy.position.cell.equal(&cell)) return true;
+    pub fn isCellOccupiedByOtherEnemy(self: *GameWorld, cell: Vector2(i16), enemyId: usize) bool {
+        for (self.enemies.items) |*enemy| {
+            if (enemy.entityId != enemyId and enemy.position.cell.equal(&cell)) return true;
         }
         return false;
     }
@@ -137,14 +161,39 @@ pub const GameWorld = struct {
     // The populateAccessibleCells function populates the work_buffer with all accessible neighboring cells of a given cell.
     // It checks the four cardinal directions (up, down, left, right) and adds any walkable cells to the work_buffer for further processing, such as pathfinding or movement planning.
     pub fn populateAccessibleCells(self: *GameWorld, cell: Vector2(i16)) !void {
-        self.work_buffer.clearRetainingCapacity();
+        self.accessibleCells.clearRetainingCapacity();
         for (Vector2(i16).cardinalDirections()) |direction| {
             const destination = cell.add(&direction);
             if (self.isCellWalkable(destination)) |walkable| {
-                if (walkable) try self.work_buffer.append(self.allocator, destination);
+                if (walkable) try self.accessibleCells.append(self.allocator, destination);
             } else |_| {}
         }
     }
+
+    pub fn getCharacterDistances(self: *GameWorld)![][]u8 
+    {
+        if(self.distances)|distances|{
+            return distances;
+        }
+        const distances=try pathfinding.breadthFirstDistances(
+            self.allocator,
+            self.character.?.position.cell,
+            @intCast(self.tilemap.grid_size.x),
+            @intCast(self.tilemap.grid_size.y),
+            @constCast(self),
+            isPathfindingCellWalkable,
+        );
+        self.distances = distances;
+        return self.distances.?;
+    }
+
+    // interface fonction for BFS algorithm
+    fn isPathfindingCellWalkable(context: *anyopaque, cell: Vector2(i16)) bool
+    {
+        const world: *GameWorld = @alignCast(@ptrCast(context));
+        return world.isCellWalkable(cell) catch false;
+    }
+
 
 };
 

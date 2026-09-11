@@ -2,7 +2,7 @@ pub const Health = struct {
     hp: u16,
     max_hp: u16,
 
-    pub fn isDead(self: Health) bool {
+    pub fn isDead(self: *const Health) bool {
         return self.hp == 0;
     }
 

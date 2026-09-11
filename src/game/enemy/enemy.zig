@@ -17,32 +17,40 @@ const Transform = maths.geometry.Transform;
 const Color = gfx.Color;
 const Sprite = engine.sprites.Sprite;
 const Tilemap = engine.tiles.Tilemap;
-const ActionPlan = @import("action_plan.zig").ActionPlan;
+const NPCActionPlan = @import("action_plan.zig").NPCActionPlan;
+const NPCState = @import("action_plan.zig").NPCState;
 // #endregion
+
+
+
 
 // Represents an enemy character in the game world, 
 // with properties for position, health, force, rendering, and an action plan for movement.
 pub const Enemy = struct {
+    entityId: usize,
     position: movement.Position,
     local_transform: movement.LocalTransform,
     world_transform: movement.WorldTransform,
     health: combat.Health,
     force: u16,
     renderable: rendering.Renderable,
-    action_plan: ?ActionPlan = null,
+    state: NPCState,
+    action_plan: ?NPCActionPlan = null,
 
-    pub fn create(allocator: Allocator, tilemap: *Tilemap,cell : Vector2(i16)) !Enemy {  
+    pub fn create(allocator: Allocator, tilemap: *Tilemap,cell : Vector2(i16),state: NPCState, entityId: usize) !Enemy {  
         const local = movement.makeTransform(cell);
         const sprite = try Sprite.init(allocator, globals.assets.enemy_sprite, 1, Color.white);
         errdefer sprite.deinit();
 
         return .{
+            .entityId=entityId,
             .position = .{ .cell = cell },
             .local_transform = .{ .local = local },
             .world_transform = .{ .world = tilemap.transform.xform(&local) },
             .health = .{ .hp = 50, .max_hp = 50 },
             .force = 5,
             .renderable = .{ .sprite = @ptrCast(sprite), .z_layer = 1, .tint = raylib.WHITE },
+            .state = state,
         };
     }
 

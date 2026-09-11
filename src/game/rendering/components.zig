@@ -12,7 +12,7 @@ pub const Renderable = struct {
     z_layer: i16 = 0,
     tint: raylib.Color = raylib.WHITE,
 
-    pub fn destroySprite(renderable: *Renderable) void {
+    pub fn destroySprite(renderable: *const Renderable) void {
         const sprite: *Sprite = @ptrCast(@alignCast(renderable.sprite));
         sprite.deinit();
     }

@@ -44,6 +44,7 @@ pub fn run(world: *GameWorld) !bool {
         try engine.mainLoop();
 
         if (!game_over and world.character != null) {
+            world.newTick();
             const inputs = engine.core.Inputs.read();
             character_input.update(world, &inputs);
             try enemy_ai.update(world);
