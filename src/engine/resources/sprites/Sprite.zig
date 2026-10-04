@@ -8,7 +8,7 @@ const raylib = engine.vendors.raylib;
 const Vector2 = libs.maths.geometry.vectors.Vector2;
 // #endregion
 
-const Sprite = @This();
+pub const Sprite = @This();
 
 texture: raylib.Texture2D,
 

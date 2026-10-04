@@ -26,6 +26,7 @@ pub const Assets = struct {
     enemy_actions_arrow: Sprite,
     character_hart: Sprite,
     tileset_spritesheet: SpriteSheet,
+    mouse_pointers_spritesheet: SpriteSheet,
     tileset: ?GameTilesSet = null,
     initialized: bool = false,
 
@@ -37,6 +38,7 @@ pub const Assets = struct {
             .enemy_actions_arrow = Sprite.init(@embedFile("sprites/ui/EnemyActions/Arrow.png")),
             .character_hart = Sprite.init(@embedFile("sprites/character/Hart.png")),
             .tileset_spritesheet = SpriteSheet.init(@embedFile("sprites/tilesets/Biome1Tileset.png")),
+            .mouse_pointers_spritesheet = SpriteSheet.init(@embedFile("sprites/ui/MousePointers.png")),
             .initialized = true,
             // .tileset_spritesheet = SpriteSheet.init(@embedFile("sprites/tilesets/Tileset.png")),
         };
@@ -55,6 +57,7 @@ pub const Assets = struct {
         self.enemy_actions_arrow.deinit();
         self.character_hart.deinit();
         self.tileset_spritesheet.deinit();
+        self.mouse_pointers_spritesheet.deinit();
         self.initialized = false;
     }
 

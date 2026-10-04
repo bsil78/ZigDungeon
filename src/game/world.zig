@@ -27,20 +27,16 @@ const Transform = @import("../engine/core/core.zig").rendering.Transform;
 // #endregion
 
 pub const GameWorld = struct {
-    assets: Assets = undefined,
     resources: GameResources = undefined,
     entities: [globals.MAX_ENTITIES]?Entity = @splat(null),
     tick: u32 = 0,
 
-    // Initializes the game world by creating the tile set, tile map, character, and enemies.
-    pub fn init(window_rect: Rect(u32)) !GameWorld {
-        var assets = try Assets.init();
-        errdefer assets.deinit();
+    // Initializes world state using assets owned by the game.
+    pub fn init(assets: *const Assets, window_rect: Rect(u32)) !GameWorld {
         const tiles_map = try createCenteredTilemap(window_rect);
-        const entities = try createStartingEntities(&assets, tiles_map.transform);
+        const entities = try createStartingEntities(assets, tiles_map.transform);
 
         return .{
-            .assets = assets,
             .resources = .{ .tilesMap = tiles_map },
             .entities = entities,
         };
@@ -108,7 +104,6 @@ pub const GameWorld = struct {
 
     pub fn deinit(self: *GameWorld) void {
         self.entities = @splat(null);
-        self.assets.deinit();
     }
 
     const EntityInsertError = error{ EntityIdOutOfRange, EntitySlotOccupied, InvalidEntitySlot, EntityTypeCapacityExceeded };
@@ -170,6 +165,30 @@ pub const GameWorld = struct {
     pub fn getTile(self: *const GameWorld, cell: WorldCell) GameTilesMap.Error!TileType {
         const tile_type = try self.resources.tilesMap.getTile(cell);
         return @enumFromInt(tile_type);
+    }
+
+    pub fn pointedCell(self: *const GameWorld, screen_position: Vector2(f32)) ?WorldCell {
+        const map_origin = self.resources.tilesMap.transform.position;
+        const cell_size = GameTilesSet.TILE_SIZE.as(f32);
+        if (!std.math.isFinite(screen_position.x) or !std.math.isFinite(screen_position.y) or
+            !std.math.isFinite(map_origin.x) or !std.math.isFinite(map_origin.y) or
+            cell_size.x <= 0 or cell_size.y <= 0)
+        {
+            return null;
+        }
+
+        const position = screen_position.minus(map_origin);
+        const map_size = GameTilesMap.SIZE.as(f32);
+        const map_width = cell_size.x * map_size.x;
+        const map_height = cell_size.y * map_size.y;
+        if (position.x < 0 or position.y < 0 or position.x >= map_width or position.y >= map_height) {
+            return null;
+        }
+
+        return WorldCell.init(
+            @intFromFloat(@floor(position.x / cell_size.x)),
+            @intFromFloat(@floor(position.y / cell_size.y)),
+        );
     }
 
     pub fn getEnemyAtCell(self: *const GameWorld, cell: WorldCell) ?globals.EntityId {

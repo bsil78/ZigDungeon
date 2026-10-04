@@ -1,10 +1,14 @@
 // #region Namespace imports
 const raylib = @import("../engine/vendors/vendors.zig").raylib;
+const geometry = @import("../libs/libs.zig").maths.geometry;
 // #endregion
 
 // #region Concrete imports
 const Keyboard = @import("../engine/core/subsystems/input.zig").Keyboard;
 const Gamepad = @import("../engine/core/subsystems/gamepad.zig").Gamepad;
+const Mouse = @import("../engine/core/subsystems/mouse.zig").Mouse;
+const Rect = geometry.shapes.Rect;
+const Vector2 = geometry.vectors.Vector2;
 // #endregion
 
 pub const GameInput = struct {
@@ -15,6 +19,47 @@ pub const GameInput = struct {
     shoot: bool = false,
     restart: bool = false,
 };
+
+var mouse_input: Mouse = .{};
+var viewport: Rect(f32) = .{ .x = 0, .y = 0, .w = 0, .h = 0 };
+
+pub fn initializeMouse(window_rect: Rect(u32)) void {
+    viewport = .{
+        .x = @floatFromInt(window_rect.x),
+        .y = @floatFromInt(window_rect.y),
+        .w = @floatFromInt(window_rect.w),
+        .h = @floatFromInt(window_rect.h),
+    };
+}
+
+pub fn beginMouseRun() void {
+    mouse_input.releaseToOS();
+    mouse_input = .{};
+}
+
+pub fn updateMouse(delta_time: f32) void {
+    mouse_input.update(viewport, delta_time);
+}
+
+pub fn mouseState() *const Mouse {
+    return &mouse_input;
+}
+
+pub fn mousePosition() Vector2(f32) {
+    return mouse_input.position;
+}
+
+pub fn mouseHotSpotPosition() Vector2(f32) {
+    return mouse_input.position.add(Vector2(f32).init(viewport.x, viewport.y));
+}
+
+pub fn releaseMouseToOS() void {
+    mouse_input.releaseToOS();
+}
+
+pub fn requestMouseCapture() void {
+    mouse_input.requestCapture();
+}
 
 pub fn read(
     keyboard: *Keyboard,

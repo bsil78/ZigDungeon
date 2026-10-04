@@ -2,6 +2,7 @@
 const std = @import("std");
 const engine = @import("../../engine/engine.zig");
 const globals = @import("../globals.zig");
+const Layers = @import("../game_enums.zig").Layers;
 const raylib = engine.vendors.raylib;
 // #endregion
 
@@ -22,7 +23,7 @@ pub fn screen(window_size: Rect(u32)) SizedRenderable {
                 GameOver.draw();
             }
         }.draw_go,
-        .z_layer = std.math.maxInt(i16),
+        .z_layer = @intFromEnum(Layers.GAME_OVER),
     };
 }
 

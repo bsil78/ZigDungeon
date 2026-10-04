@@ -6,6 +6,7 @@ pub const random = @import("subsystems/random.zig");
 pub const rendering = @import("subsystems/rendering.zig");
 pub const input = @import("subsystems/input.zig");
 pub const gamepad = @import("subsystems/gamepad.zig");
+pub const mouse = @import("subsystems/mouse.zig");
 // #endregion
 
 // #region Concrete imports

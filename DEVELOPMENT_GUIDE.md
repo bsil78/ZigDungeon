@@ -51,9 +51,12 @@ src/
 │   │   ├── core.zig                  Core subsystem exports
 │   │   └── subsystems/
 │   │       ├── input.zig             Reusable keyboard state and repeat timing
+│   │       ├── gamepad.zig           Gamepad button/axis state and repeat timing
+│   │       ├── mouse.zig             Mouse buttons, capture, drag/drop, and viewport tracking
 │   │       ├── random.zig            Random number generator
 │   │       └── rendering.zig         Render queue and raylib drawing
 │   ├── resources/
+│   │   ├── MousePointer.zig          Pointer visuals, animation, and renderable creation
 │   │   └── sprites/                  Sprite, sprite-sheet, and animation types
 │   ├── tiles/                        Tilemap and tileset types
 │   ├── utils/                        Engine utilities
@@ -115,11 +118,13 @@ speeds. Normal and maximum movement speeds default to 1 and 3 cell moves per
 second. Wandering and guarding use normal speed; chasing and fleeing use
 maximum speed.
 
-`GameWorld.assets` owns all game raylib textures, including the generated
-tileset textures. Entity visuals and animation frames hold borrowed texture
-handles into those assets; destroying an entity only clears its registry slot.
-`GameWorld.deinit()` releases the assets once, while animation state stores
-frame rectangles into the shared spritesheet rather than extracting textures.
+The game owns all raylib textures, including generated tileset textures, for
+the full application session. `GameWorld.init()` borrows those assets to build
+its entities; destroying a world only clears its registry slots. Entity visuals,
+animation frames, and mouse pointer configurations hold borrowed texture
+handles, so they remain valid across world restarts and while mouse setup is
+used outside the gameplay loop. Animation state stores frame rectangles into
+the shared spritesheet rather than extracting textures.
 
 ### NPCs
 
@@ -143,12 +148,41 @@ frame rectangles into the shared spritesheet rather than extracting textures.
 
 ### Character and Combat
 
-- `src/game/character/input.zig`: maps keyboard events to game actions and
-  converts movement actions into character movement.
+- `src/game/input.zig`: combines keyboard and gamepad input into game-level actions.
+- `src/game/character/input.zig`: translates game-level actions into character
+  actions and movement.
 - `src/engine/core/subsystems/input.zig`: reusable keyboard press and repeat
   handling; it does not define game-specific actions or movement behavior.
+- `src/engine/core/subsystems/gamepad.zig`: reusable gamepad button/axis polling.
 - `src/game/character/resolution.zig`: removes the player after death.
 - `src/game/combat/components.zig`: defines `Health` and damage/healing behavior.
+
+### Mouse and Pointer
+
+`src/engine/core/subsystems/mouse.zig` provides fixed-size mouse input. It
+tracks pointer position, wheel movement, all seven Raylib mouse buttons,
+press/release state, double-clicks, viewport enter/leave events, dragging, and
+drop events.
+
+`src/engine/resources/MousePointer.zig` provides a generic pointer visual
+resource indexed by a client-defined enum. It supports static frames or
+fixed-capacity animations, hot reference points, visual offsets, and render
+layers; it consumes mouse position but does not poll input. Pointer textures are
+borrowed; the client retains ownership.
+
+`src/game/input.zig` owns game-facing mouse input alongside keyboard/gamepad
+input: call `updateMouse()` to poll it, query `mouseState()` and
+`mouseHotSpotPosition()`, and use `releaseMouseToOS()` or
+`requestMouseCapture()` for cursor control. The hot-spot position is in screen
+coordinates and is available without a world. `GameWorld.pointedCell(...)`
+maps a supplied screen coordinate to a cell when a world exists.
+
+`src/game/rendering/mouse.zig` owns pointer visual configuration and render
+queue integration. Initialize it by passing one `PointerConfig` per state, in
+the declaration order of the pointer state enum. Static pointers use an
+existing `Sprite`, and animated pointers use an existing `AnimatedSprite`.
+These sprite resources borrow textures from game-owned `Assets`, which must
+outlive the pointer.
 
 ### Rendering
 

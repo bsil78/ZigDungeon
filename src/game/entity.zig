@@ -31,7 +31,7 @@ pub const EntityData = union(EntityType) {
 pub const Entity = struct {
     id: globals.EntityId,
     data: EntityData,
-    // Texture handles in the visual payloads are borrowed; GameWorld.assets owns the GPU resources.
+    // Texture handles in visual payloads are borrowed; the game owns the GPU resources.
     cell: WorldCell,
     health: Health,
     force: u16,

@@ -8,6 +8,7 @@ const libs = @import("../libs/libs.zig");
 const globals = @import("globals.zig");
 const types = @import("game_types.zig");
 const game_input = @import("input.zig");
+const mouse_rendering = @import("rendering/mouse.zig");
 const char_input = @import("character/input.zig");
 const char_res = @import("character/resolution.zig");
 const npc_ai = @import("npc/generic/ai.zig");
@@ -23,11 +24,15 @@ const GameRenderer = types.GameRenderer;
 const GameTilesSet = types.GameTilesSet;
 const Color = libs.gfx.Color;
 const UserSettings = core.UserSettings;
+const Vector2 = libs.maths.geometry.vectors.Vector2;
+const Rect = libs.maths.geometry.shapes.Rect;
+const Assets = @import("assets/assets.zig").Assets;
 // #endregion
 
 var _world: GameWorld = undefined;
 var _renderer: GameRenderer = undefined;
 var _project_settings: UserSettings = undefined;
+var _assets: Assets = undefined;
 
 const GameState = enum {
     RUNNING,
@@ -36,6 +41,26 @@ const GameState = enum {
 
 pub fn start() !void {
     _renderer = try startEngine();
+    _assets = try Assets.init();
+    defer _assets.deinit();
+    game_input.initializeMouse(_project_settings.window_rect);
+    const pointer_sprite: engine.resources.Sprite = .{
+        .texture = try _assets.mouse_pointers_spritesheet.getRegionTexture(Rect(u16).init(0, 0, 12, 16)),
+    };
+    try mouse_rendering.initialize(.{
+        mouse_rendering.PointerConfig.static(
+            pointer_sprite,
+            Vector2(f32).Zero(),
+            Vector2(f32).Zero(),
+            @intFromEnum(Layers.MOUSE_POINTER),
+        ),
+        mouse_rendering.PointerConfig.static(
+            pointer_sprite,
+            Vector2(f32).Zero(),
+            Vector2(f32).Zero(),
+            @intFromEnum(Layers.MOUSE_POINTER),
+        ),
+    });
     try doGameLoop();
 }
 
@@ -55,7 +80,7 @@ fn startEngine() !GameRenderer {
 
 fn doGameLoop() !void {
     while (true) {
-        _world = try GameWorld.init(_project_settings.window_rect);
+        _world = try GameWorld.init(&_assets, _project_settings.window_rect);
         const restart_game = try run();
         if (!restart_game) break;
     }
@@ -69,6 +94,9 @@ fn run() !bool {
     var game_state = GameState.RUNNING;
     var keyboard: core.input.Keyboard = .{};
     var gamepad: core.gamepad.Gamepad = .{};
+    game_input.beginMouseRun();
+    mouse_rendering.beginRun();
+    defer game_input.releaseMouseToOS();
     errdefer _world.deinit();
 
     while (!raylib.WindowShouldClose()) {
@@ -77,6 +105,12 @@ fn run() !bool {
         const delta_time = raylib.GetFrameTime();
         const inputs = game_input.read(&keyboard, &gamepad, delta_time);
         const character_inputs = char_input.Inputs.fromGameInput(inputs);
+        game_input.updateMouse(delta_time);
+        const pointer_state: mouse_rendering.State = switch (game_state) {
+            .RUNNING => .running,
+            .GAME_OVER => .game_over,
+        };
+        mouse_rendering.update(pointer_state, delta_time);
         _world.updateAnimations(delta_time);
         //std.log.info("Game state : {s}", .{@tagName(game_state)});
         switch (game_state) {
@@ -111,9 +145,12 @@ fn run() !bool {
 }
 
 fn prepareWorldRendering() !void {
-    const map_renderable = _world.resources.tilesMap.renderable(GameTilesSet, @constCast(&(_world.assets.tileset.?)), GameRenderer.RENDERABLE_CONTEXT_SIZE, @intFromEnum(Layers.MAP));
+    const map_renderable = _world.resources.tilesMap.renderable(GameTilesSet, @constCast(&_assets.tileset.?), GameRenderer.RENDERABLE_CONTEXT_SIZE, @intFromEnum(Layers.MAP));
     try _renderer.addToRenderQueue(map_renderable);
     try queueEntities();
+    if (game_input.mouseState().captured) {
+        try mouse_rendering.addToRenderQueue(&_renderer, game_input.mousePosition());
+    }
 }
 
 fn gameOverScreen() !void {
