@@ -18,6 +18,27 @@ test "vector arithmetic preserves component-wise laws" {
     try std.testing.expectEqual(Vector2(f32).init(-1.0, 1.0), first_float.divide(Vector2(f32).init(-6.0, -2.0)));
 }
 
+test "vector multiplication supports compatible mixed numeric types" {
+    const integer_vector = Vector2(i32).init(3, -4);
+    const unsigned_factors = Vector2(u16).init(2, 3);
+    try std.testing.expectEqual(Vector2(i32).init(6, -12), integer_vector.times(unsigned_factors));
+    try std.testing.expectEqual(Vector2(i32).init(6, -12), integer_vector.times(&unsigned_factors));
+    try std.testing.expectEqual(Vector2(i32).init(9, -12), integer_vector.times(@as(u8, 3)));
+    try std.testing.expectEqual(Vector2(i32).init(6, -8), integer_vector.times(2));
+
+    const float_vector = Vector2(f32).init(1.5, -2.0);
+    const signed_factors = Vector2(i16).init(2, 3);
+    try std.testing.expectEqual(Vector2(f32).init(3.0, -6.0), float_vector.times(signed_factors));
+    try std.testing.expectEqual(Vector2(f32).init(3.0, -4.0), float_vector.times(@as(i8, 2)));
+    try std.testing.expectEqual(Vector2(f32).init(3.0, -4.0), float_vector.times(2.0));
+
+    const double_vector = Vector2(f64).init(2.0, -3.0);
+    const single_factors = Vector2(f32).init(0.5, 2.0);
+    try std.testing.expectEqual(Vector2(f64).init(1.0, -6.0), double_vector.times(single_factors));
+    const scalar_factor: f64 = 0.5;
+    try std.testing.expectEqual(Vector2(f64).init(1.0, -1.5), double_vector.times(scalar_factor));
+}
+
 test "vector products follow their geometric definitions" {
     const x_axis = Vector2(f32).Right();
     const y_axis = Vector2(f32).Down();

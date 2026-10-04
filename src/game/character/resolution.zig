@@ -1,9 +1,16 @@
+// #region Namespace imports
+const std = @import("std");
+// #endregion
+
 // #region Concrete imports
-const GameWorld = @import("../world/world.zig").GameWorld;
+const GameWorld = @import("../world.zig").GameWorld;
 // #endregion
 
 pub fn resolve(world: *GameWorld) void {
-    if (world.character) |character| {
-        if (character.health.isDead()) world.destroyCharacter();
+    if (world.getCharacter()) |character| {
+        if (character.health.isDead()) {
+            //std.log.info("Player character is dead",.{});
+            world.destroyCharacter();
+        }
     }
 }

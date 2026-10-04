@@ -1,13 +1,8 @@
-// Datastructures library - collection of optimized data structures for ECS and game engines
-// 
-// Includes:
-//   - SparseDenseSet: Generic sparse-dense set for cache-friendly component storage
-
 // #region Namespace imports
-const sparse_dense_set = @import("sparse_dense_set.zig");
 // #endregion
 
 // #region Concrete imports
-pub const SparseDenseSet = sparse_dense_set.SparseDenseSet;
-pub const SparseDenseSetType = sparse_dense_set.SparseDenseSetType;
+pub const SparseDenseSet = @import("sparse_dense_set.zig").SparseDenseSet;
+pub const SparseDenseSetType = @import("sparse_dense_set.zig").SparseDenseSetType;
+pub const LimitedQueue = @import("limited_queue.zig").LimitedQueue;
 // #endregion

@@ -35,6 +35,14 @@ Follow these rules:
    import regions, immediately after them.
 8. Do not create an empty concrete-import region when the file has no concrete
    imports.
+9. Use concise, descriptive namespace aliases: avoid long or redundant prefixes,
+   but do not use opaque one-letter aliases merely to minimize characters. If a
+   namespace is used repeatedly through a deep access chain, import the relevant
+   module or subsystem directly under a meaningful alias, or bind the nested
+   namespace once near the imports. Prefer `input.Keyboard` from a direct input
+   subsystem import over repeating `engine.core.input.Keyboard`. If several
+   core subsystems are used, bind `engine.core` once as `core` and use that
+   shorter prefix consistently.
 
 Use `// #endregion` to close each region. Region names are part of the
 convention and should remain exactly `Namespace imports` and `Concrete

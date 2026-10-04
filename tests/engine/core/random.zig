@@ -1,10 +1,10 @@
 // #region Namespace imports
 const std = @import("std");
-const random_module = @import("production_random");
+const rng = @import("production_random");
 // #endregion
 
 test "recorded random values can be replayed" {
-    var recording = try random_module.GameRandom.init(std.testing.allocator, .{
+    var recording = try rng.GameRandom.init(std.testing.allocator, .{
         .mode = .record,
         .seed = 12345,
     });
@@ -13,7 +13,7 @@ test "recorded random values can be replayed" {
     _ = try recording.nextU64();
     _ = try recording.nextU64();
 
-    var replay = try random_module.GameRandom.init(std.testing.allocator, .{
+    var replay = try rng.GameRandom.init(std.testing.allocator, .{
         .mode = .replay,
         .fixed_values = recording.recorded(),
     });
@@ -26,7 +26,7 @@ test "recorded random values can be replayed" {
 
 test "fixed values drive bounded indexes" {
     const fixed_values = [_]u64{ 4, 7 };
-    var random = try random_module.GameRandom.init(std.testing.allocator, .{
+    var random = try rng.GameRandom.init(std.testing.allocator, .{
         .mode = .fixed,
         .fixed_values = &fixed_values,
     });

@@ -158,7 +158,7 @@ pub fn SparseDenseSet(ComponentType: type, EntityIDType: type) type {
         }
 
         /// Iterator for convenient for-each loops
-        /// Example: for (storage.iter()) |entry| { ... }
+        /// Example: var it = storage.iter(); while (it.next()) |entry| { ... }
         pub fn iter(self: *const Self) SetIterator {
             return SetIterator{
                 .entities = self.dense_entities.items,

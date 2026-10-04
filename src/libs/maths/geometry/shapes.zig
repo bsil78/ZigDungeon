@@ -1,13 +1,15 @@
 // #region Namespace imports
-const vector = @import("vector.zig");
+const vectors = @import("../geometry/vectors.zig");
 // #endregion
 
 // #region Concrete imports
-const Vector2 = vector.Vector2;
+const Vector2 = vectors.Vector2;
 // #endregion
 
 pub fn Rect(comptime T: type) type {
     return struct {
+        pub const SCALAR: type = T;
+
         x: T,
         y: T,
         w: T,
@@ -17,8 +19,12 @@ pub fn Rect(comptime T: type) type {
             return .{ .x = x, .y = y, .w = w, .h = h };
         }
 
-        pub fn initV(pos: Vector2(T), size: Vector2(T)) Rect(T) {
+        pub fn initPV(pos: Vector2(T), size: Vector2(T)) Rect(T) {
             return .{ .x = pos.x, .y = pos.y, .w = size.x, .h = size.y };
+        }
+
+        pub fn initV(size: Vector2(T)) Rect(T) {
+            return .{ .x = @as(T, 0), .y = @as(T, 0), .w = size.x, .h = size.y };
         }
 
         pub fn centerRect(self: Rect(T), container_rect: Rect(T)) Rect(T) {
@@ -42,5 +48,8 @@ pub fn Rect(comptime T: type) type {
             return Vector2(T).init(self.w, self.h);
         }
 
+        pub fn contains(self: Rect(T), other: Rect(T)) bool {
+            return self.x <= other.x and self.y <= other.y and self.x + self.w >= other.x + other.w and self.y + self.h >= other.y + other.h;
+        }
     };
 }

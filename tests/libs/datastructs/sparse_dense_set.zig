@@ -1,9 +1,9 @@
 // #region Namespace imports
 const std = @import("std");
-const data_structures = @import("production_sparse_dense_set");
+const sparse_set = @import("production_sparse_dense_set");
 // #endregion
 
-const Storage = data_structures.SparseDenseSet(u32, u32);
+const Storage = sparse_set.SparseDenseSet(u32, u32);
 
 test "set inserts, updates, and retrieves components" {
     var storage = try Storage.init(std.testing.allocator);
