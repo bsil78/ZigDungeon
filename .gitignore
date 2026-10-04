@@ -3,5 +3,5 @@
 .vscode/*
 .ai_documents
 zig-*
-raylib
+/raylib
 .zig*
