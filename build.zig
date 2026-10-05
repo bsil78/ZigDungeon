@@ -4,6 +4,19 @@ const builtin = @import("builtin");
 // #endregion
 
 pub fn build(b: *std.Build) void {
+    if (b.option(bool, "patch-raylib", "Apply the local Raylib build patch") orelse false) {
+        const patch_cmd = b.addSystemCommand(&.{
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+        });
+        patch_cmd.addFileArg(b.path("patch-raylib.ps1"));
+        b.getInstallStep().dependOn(&patch_cmd.step);
+        return;
+    }
+
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 

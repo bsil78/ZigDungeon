@@ -8,18 +8,36 @@ object-oriented Zig game by MrBSmith, also known as Babadesbois 💛.
 
 - [Zig 0.16.0-dev](https://ziglang.org/download/)
 - [Raylib 6.0](https://github.com/raysan5/raylib/releases/tag/6.0)
-- [Raylib-zig](https://github.com/raylib-zig/raylib-zig)
 - [Git](https://git-scm.com/downloads)
 
 ## Installation
 
-Clone the repository and initialize its raylib dependency:
+Clone ZigDungeon and its local Raylib source dependency, then apply the
+project's Raylib build patch:
 
 ```bash
 git clone https://github.com/bsil78/ZigDungeon.git
 cd ZigDungeon
-git submodule update --init --recursive
+git clone --depth 1 --branch 6.0 https://github.com/raysan5/raylib.git raylib
 ```
+
+## Raylib Build Patch
+
+Raylib is built from the local `raylib` source directory by Zig as part of the
+game build, so a separately installed Raylib library is not required. Before
+building, run the patch-only build command from the repository root:
+
+```bash
+zig build -Dpatch-raylib=true
+```
+
+This applies `raylib-no-emsdk.patch` to the local Raylib checkout without
+resolving the Raylib build dependency first. It is safe to run more than once.
+
+The patch disables Raylib's Emscripten build integration and marks its
+Emscripten SDK packages as lazy dependencies. This prevents a normal
+desktop build from downloading or installing Emscripten tooling. Emscripten
+targets are not supported by this patched configuration.
 
 ## Launching the Game
 
@@ -41,5 +59,7 @@ MrBSmith. raylib is provided through the repository dependency configuration.
 
 ## Troubleshooting
 
-If Git cannot download the raylib dependency, check your Git authentication
-configuration or use HTTPS URLs for the repository and its submodules.
+If the patch command reports that Raylib cannot be found, ensure the Raylib
+6.0 checkout is located at `raylib` under the ZigDungeon repository root.
+If applying the patch fails, check that the checkout is Raylib 6.0 and that
+its build files have not been modified incompatibly.

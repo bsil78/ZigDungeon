@@ -1,0 +1,242 @@
+diff --git a/build.zig b/build.zig
+index eb1eb5cc..4d2ad0e1 100644
+--- a/build.zig
++++ b/build.zig
+@@ -1,88 +1,6 @@
+ const std = @import("std");
+ const builtin = @import("builtin");
+-
+-pub const emsdk = struct {
+-    const zemscripten = @import("zemscripten");
+-
+-    pub fn shell(raylib_dep: *std.Build.Dependency) std.Build.LazyPath {
+-        return raylib_dep.path("src/shell.html");
+-    }
+-
+-    pub const FlagsOptions = struct {
+-        optimize: std.builtin.OptimizeMode,
+-        asyncify: bool = true,
+-    };
+-
+-    pub fn emccDefaultFlags(allocator: std.mem.Allocator, options: FlagsOptions) zemscripten.EmccFlags {
+-        var emcc_flags = zemscripten.emccDefaultFlags(allocator, .{
+-            .optimize = options.optimize,
+-            .fsanitize = true,
+-        });
+-
+-        if (options.asyncify)
+-            emcc_flags.put("-sASYNCIFY", {}) catch unreachable;
+-
+-        return emcc_flags;
+-    }
+-
+-    pub const SettingsOptions = struct {
+-        optimize: std.builtin.OptimizeMode,
+-        es3: bool = false,
+-        glfw3: bool = true,
+-        memory_growth: bool = false,
+-        total_memory: u32 = 134217728,
+-        emsdk_allocator: zemscripten.EmsdkAllocator = .emmalloc,
+-    };
+-
+-    pub fn emccDefaultSettings(allocator: std.mem.Allocator, options: SettingsOptions) zemscripten.EmccSettings {
+-        var emcc_settings = zemscripten.emccDefaultSettings(allocator, .{
+-            .optimize = options.optimize,
+-            .emsdk_allocator = options.emsdk_allocator,
+-        });
+-
+-        if (options.es3) {
+-            emcc_settings.put("FULL_ES3", "1") catch unreachable;
+-            emcc_settings.put("MIN_WEBGL_VERSION", "2") catch unreachable;
+-            emcc_settings.put("MAX_WEBGL_VERSION", "2") catch unreachable;
+-        }
+-        if (options.glfw3) {
+-            emcc_settings.put("USE_GLFW", "3") catch unreachable;
+-        }
+-
+-        const total_memory = std.fmt.allocPrint(allocator, "{d}", .{options.total_memory}) catch unreachable;
+-
+-        emcc_settings.put("EXPORTED_RUNTIME_METHODS", "['requestFullscreen']") catch unreachable;
+-        emcc_settings.put("TOTAL_MEMORY", total_memory) catch unreachable;
+-        emcc_settings.put("FORCE_FILESYSTEM", "1") catch unreachable;
+-        emcc_settings.put("EXPORTED_RUNTIME_METHODS", "ccall") catch unreachable;
+-
+-        if (options.memory_growth)
+-            emcc_settings.put("ALLOW_MEMORY_GROWTH", "1") catch unreachable;
+-
+-        return emcc_settings;
+-    }
+-
+-    pub fn emccStep(b: *std.Build, raylib: *std.Build.Step.Compile, wasm: *std.Build.Step.Compile, options: zemscripten.StepOptions) *std.Build.Step {
+-        const activate_emsdk_step = zemscripten.activateEmsdkStep(b);
+-
+-        const emsdk_dep = b.dependency("emsdk", .{});
+-        raylib.root_module.addIncludePath(emsdk_dep.path("upstream/emscripten/cache/sysroot/include"));
+-        wasm.root_module.addIncludePath(emsdk_dep.path("upstream/emscripten/cache/sysroot/include"));
+-
+-        const emcc_step = zemscripten.emccStep(b, wasm, options);
+-        emcc_step.dependOn(activate_emsdk_step);
+-
+-        return emcc_step;
+-    }
+-
+-    pub fn emrunStep(
+-        b: *std.Build,
+-        html_path: []const u8,
+-        extra_args: []const []const u8,
+-    ) *std.Build.Step {
+-        return zemscripten.emrunStep(b, html_path, extra_args);
+-    }
+-};
++const emsdk: ?type = null; //@import("smsdk.zig").emsdk;
+ 
+ pub fn linkWindows(mod: *std.Build.Module, opengl: bool, comptime shcore: bool) void {
+     if (opengl) mod.linkSystemLibrary("opengl32", .{});
+@@ -264,6 +182,7 @@ fn compileRaylib(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.
+                     linkMacOS(b, raylib_mod);
+                 },
+                 .emscripten => {
++                    std.debug.assert(emsdk != null);
+                     switch (opengl_version) {
+                         .auto => opengl_version = OpenglVersion.gles_2,
+                         .gles_2, .gles_3, .gl_soft => {},
+@@ -271,9 +190,10 @@ fn compileRaylib(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.
+                     }
+ 
+                     raylib_mod.addCMacro("PLATFORM_WEB", "");
+-
+-                    const activate_emsdk_step = emsdk.zemscripten.activateEmsdkStep(b);
+-                    raylib.step.dependOn(activate_emsdk_step);
++                    if (emsdk) |emsdk_present| {
++                        const activate_emsdk_step = emsdk_present.zemscripten.activateEmsdkStep(b);
++                        raylib.step.dependOn(activate_emsdk_step);
++                    }
+                 },
+                 else => @panic("Target is not supported with this platform"),
+             }
+@@ -323,6 +243,7 @@ fn compileRaylib(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.
+                 .freebsd, .openbsd, .netbsd, .dragonfly => linkBSD(b, raylib_mod),
+                 .macos => linkMacOS(b, raylib_mod),
+                 .emscripten => {
++                    std.debug.assert(emsdk != null);
+                     switch (opengl_version) {
+                         .auto => opengl_version = OpenglVersion.gles_2,
+                         .gles_2, .gles_3, .gl_soft => {},
+@@ -330,8 +251,10 @@ fn compileRaylib(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.
+                     }
+ 
+                     raylib_mod.addCMacro("PLATFORM_WEB_RGFW", "");
+-                    const activate_emsdk_step = emsdk.zemscripten.activateEmsdkStep(b);
+-                    raylib.step.dependOn(activate_emsdk_step);
++                    if (emsdk) |emsdk_present| {
++                        const activate_emsdk_step = emsdk_present.zemscripten.activateEmsdkStep(b);
++                        raylib.step.dependOn(activate_emsdk_step);
++                    }
+                 },
+                 else => @panic("Target is not supported with this platform"),
+             }
+@@ -695,36 +618,39 @@ fn addExamples(
+ 
+         // web exports are completely separate
+         if (target.query.os_tag == .emscripten) {
+-            exe_mod.addCMacro("PLATFORM_WEB", "");
+-
+-            const wasm = b.addLibrary(.{
+-                .name = filename,
+-                .root_module = exe_mod,
+-            });
+-
+-            const install_dir: std.Build.InstallDir = .{ .custom = b.fmt("web/{s}/{s}", .{ module, filename }) };
+-            const emcc_flags = emsdk.emccDefaultFlags(b.allocator, .{ .optimize = optimize });
+-            const emcc_settings = emsdk.emccDefaultSettings(b.allocator, .{ .optimize = optimize });
+-
+-            const emcc_step = emsdk.emccStep(b, raylib, wasm, .{
+-                .optimize = optimize,
+-                .flags = emcc_flags,
+-                .settings = emcc_settings,
+-                .shell_file_path = b.path("src/shell.html"),
+-                .install_dir = install_dir,
+-            });
+-            b.getInstallStep().dependOn(emcc_step);
+-
+-            const html_filename = try std.fmt.allocPrint(b.allocator, "{s}.html", .{wasm.name});
+-            const emrun_step = emsdk.emrunStep(
+-                b,
+-                b.getInstallPath(install_dir, html_filename),
+-                &.{},
+-            );
+-
+-            emrun_step.dependOn(emcc_step);
+-            run_step.dependOn(emrun_step);
+-            all.dependOn(emcc_step);
++            std.debug.assert(emsdk != null);
++            if (emsdk) |emsdk_present| {
++                exe_mod.addCMacro("PLATFORM_WEB", "");
++
++                const wasm = b.addLibrary(.{
++                    .name = filename,
++                    .root_module = exe_mod,
++                });
++
++                const install_dir: std.Build.InstallDir = .{ .custom = b.fmt("web/{s}/{s}", .{ module, filename }) };
++                const emcc_flags = emsdk_present.emccDefaultFlags(b.allocator, .{ .optimize = optimize });
++                const emcc_settings = emsdk_present.emccDefaultSettings(b.allocator, .{ .optimize = optimize });
++
++                const emcc_step = emsdk_present.emccStep(b, raylib, wasm, .{
++                    .optimize = optimize,
++                    .flags = emcc_flags,
++                    .settings = emcc_settings,
++                    .shell_file_path = b.path("src/shell.html"),
++                    .install_dir = install_dir,
++                });
++                b.getInstallStep().dependOn(emcc_step);
++
++                const html_filename = try std.fmt.allocPrint(b.allocator, "{s}.html", .{wasm.name});
++                const emrun_step = emsdk_present.emrunStep(
++                    b,
++                    b.getInstallPath(install_dir, html_filename),
++                    &.{},
++                );
++
++                emrun_step.dependOn(emcc_step);
++                run_step.dependOn(emrun_step);
++                all.dependOn(emcc_step);
++            }
+         } else {
+             exe_mod.addCMacro("PLATFORM_DESKTOP", "");
+ 
+@@ -501,7 +424,7 @@ fn addRaygui(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.buil
+         c.addIncludePath(b.path("src"));
+         const c_mod = c.createModule();
+         c_mod.linkLibrary(raylib);
+-        b.modules.put(b.graph.arena, "raygui", c_mod) catch @panic("OOM");
++        b.modules.put("raygui", c_mod) catch @panic("OOM");
+     }
+ }
+ 
+@@ -600,7 +523,7 @@ fn translateCMod(
+     });
+     const c_mod = c.createModule();
+     c_mod.linkLibrary(raylib);
+-    b.modules.put(b.graph.arena, header, c_mod) catch @panic("OOM");
++    b.modules.put(header, c_mod) catch @panic("OOM");
+ }
+ 
+ pub fn build(b: *std.Build) !void {
+diff --git a/build.zig.zon b/build.zig.zon
+index 07a1f740..847c8dc2 100644
+--- a/build.zig.zon
++++ b/build.zig.zon
+@@ -19,10 +19,12 @@
+         .emsdk = .{
+             .url = "git+https://github.com/emscripten-core/emsdk#4.0.9",
+             .hash = "N-V-__8AAJl1DwBezhYo_VE6f53mPVm00R-Fk28NPW7P14EQ",
++            .lazy = true,
+         },
+         .zemscripten = .{
+             .url = "git+https://github.com/zig-gamedev/zemscripten#3fa4b778852226c7346bdcc3c1486e875a9a6d02",
+             .hash = "zemscripten-0.2.0-dev-sRlDqApRAACspTbAZnuNKWIzfWzSYgYkb2nWAXZ-tqqt",
++            .lazy = true,
+         },
+     },
+ 
