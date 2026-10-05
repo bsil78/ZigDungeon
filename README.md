@@ -36,8 +36,10 @@ resolving the Raylib build dependency first. It is safe to run more than once.
 
 The patch disables Raylib's Emscripten build integration and marks its
 Emscripten SDK packages as lazy dependencies. This prevents a normal
-desktop build from downloading or installing Emscripten tooling. Emscripten
-targets are not supported by this patched configuration.
+desktop build from downloading or installing Emscripten tooling. It also
+creates Raylib's optional `emsdk.zig` helper; the patched build leaves the
+Emscripten integration disabled, so desktop builds do not import that helper.
+Emscripten targets are not supported by this patched configuration.
 
 ## Launching the Game
 

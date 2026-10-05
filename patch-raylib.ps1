@@ -38,3 +38,4 @@ function Invoke-RaylibPatch {
 
 Invoke-RaylibPatch "build.zig"
 Invoke-RaylibPatch "build.zig.zon"
+Invoke-RaylibPatch "emsdk.zig"
