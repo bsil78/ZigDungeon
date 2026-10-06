@@ -171,7 +171,6 @@ fn pointerFromGameState(state: GameStates) mouse_rendering.MouseVisual {
 
 fn beginRun() void {
     game_over.hide();
-    game_inputs.reset();
     mouse_rendering.resetPointer();
 }
 
@@ -184,16 +183,6 @@ fn prepareWorldRendering() !void {
             .renderable(GameTilesSet, @constCast(&_assets.tileset.?), GameEngine.RendererInstance.RENDERABLE_CONTEXT_SIZE, @intFromEnum(Layers.MAP));
     try _engine.renderer.addToRenderQueue(map_renderable);
     try queueEntities();
-}
-
-fn gameOverScreen() !void {
-    raylib.BeginDrawing();
-    raylib.ClearBackground(raylib.BLACK);
-    game_over.drawGameOverOverlay();
-    raylib.EndDrawing();
-    if (raylib.IsKeyPressed(raylib.KEY_R) or raylib.IsKeyPressed(raylib.KEY_ENTER)) {
-        return true;
-    }
 }
 
 pub fn queueEntities() !void {

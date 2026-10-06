@@ -32,10 +32,6 @@ pub fn initializeMouse(window_rect: Rect(u32)) void {
     };
 }
 
-pub fn reset() void {
-    inputs.releaseMouse();
-}
-
 pub fn mouseState() *const inputs.MouseState {
     return inputs.mouseState();
 }
@@ -69,7 +65,7 @@ pub fn poll() GameInputs {
     const keyboard_move_down = inputs.isKeyPressed(raylib.KEY_DOWN, true);
     const keyboard_move_left = inputs.isKeyPressed(raylib.KEY_LEFT, true);
     const keyboard_move_right = inputs.isKeyPressed(raylib.KEY_RIGHT, true);
-    
+
     return GameInputs{
         .move_up = keyboard_move_up or dpad_up or stick_up,
         .move_down = keyboard_move_down or dpad_down or stick_down,
