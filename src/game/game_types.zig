@@ -5,7 +5,7 @@ const engine = @import("../engine/engine.zig");
 const core = engine.core;
 const resources = engine.resources;
 const globals = @import("globals.zig");
-const raylib = libs.vendors.raylib;
+const raylib = engine.vendors.raylib;
 // #endregion
 
 // #region Concrete imports

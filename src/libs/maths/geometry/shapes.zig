@@ -48,8 +48,13 @@ pub fn Rect(comptime T: type) type {
             return Vector2(T).init(self.w, self.h);
         }
 
-        pub fn contains(self: Rect(T), other: Rect(T)) bool {
+        pub fn containsRect(self: Rect(T), other: Rect(T)) bool {
             return self.x <= other.x and self.y <= other.y and self.x + self.w >= other.x + other.w and self.y + self.h >= other.y + other.h;
+        }
+
+        pub fn containsPoint(rect: Rect(T), point: Vector2(T)) bool {
+            return point.x >= rect.x and point.y >= rect.y and
+                point.x < rect.x + rect.w and point.y < rect.y + rect.h;
         }
     };
 }

@@ -27,7 +27,7 @@ pub fn init(image_data: []const u8) SpriteSheet {
 }
 
 pub fn getRegionTexture(self: *const SpriteSheet, region: Rect(u16)) !raylib.Texture2D {
-    if (!Rect(u16).initV(self.size).contains(region)) {
+    if (!Rect(u16).initV(self.size).containsRect(region)) {
         std.debug.panic("Region {any} is somewhat outside of AtlasTexture {any} bounds", .{ region, self.size });
     }
     return rlh.extractSubTexture(self.texture, region);

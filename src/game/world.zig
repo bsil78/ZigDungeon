@@ -5,6 +5,7 @@ const maths = libs.maths;
 const pathfinding = maths.algorithms.pathfinding;
 const globals = @import("globals.zig");
 const enums = @import("game_enums.zig");
+const engine = @import("../engine/engine.zig");
 // #endregion
 
 // #region Concrete imports
@@ -297,12 +298,13 @@ pub const GameWorld = struct {
         return distances;
     }
 
-    pub fn updateAnimations(self: *GameWorld, delta_seconds: f32) void {
+    pub fn updateAnimations(self: *GameWorld) void {
+        const delta_time = engine.getFrameTime();
         for (&self.entities) |*entity_opt| {
             if (entity_opt.*) |*entity| {
                 switch (entity.data) {
                     .character, .soldier => {},
-                    .slime => |*slime| slime.update(delta_seconds),
+                    .slime => |*slime| slime.update(delta_time),
                 }
             }
         }

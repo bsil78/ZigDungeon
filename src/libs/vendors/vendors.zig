@@ -1,5 +1,4 @@
 // #region Namespace imports
-const raylib_module = @import("raylib/raylib.zig");
-pub const raylib = raylib_module.raylib_bindings;
-pub const raylib_platform = raylib_module.platform;
+pub const clay = @import("clay/clay.zig").clay;
+pub const clay_helper = @import("clay/clay.zig").clay_helper;
 // #endregion

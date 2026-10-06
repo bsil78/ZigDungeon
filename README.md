@@ -6,8 +6,9 @@ object-oriented Zig game by MrBSmith, also known as Babadesbois 💛.
 
 ## Prerequisites
 
-- [Zig 0.16.0-dev](https://ziglang.org/download/)
+- [Zig 0.16.0](https://ziglang.org/download/)
 - [Raylib 6.0](https://github.com/raysan5/raylib/releases/tag/6.0)
+- [Clay 0.14](https://github.com/nicbarker/clay/releases/tag/v0.14) binded with [ZClay 0.2.2](https://github.com/johan0A/clay-zig-bindings/releases/tag/v0.2.2%2B0.14)
 - [Git](https://git-scm.com/downloads)
 
 ## Installation

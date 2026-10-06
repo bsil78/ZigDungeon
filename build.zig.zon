@@ -1,20 +1,17 @@
-.{ 
-    .name = .ZigDungeon, 
-    .zig = .{
-        .version = "0.16.0-dev.0+e9b8c8e7",
-    }, 
-    .version = "0.0.1", 
-    .dependencies = .{
-        .raylib = .{
-            .path = "raylib",
-        },
-    }, 
-    .paths = .{
-        "build.zig",
-        "build.zig.zon",
-        "raylib",
-        "README.md",
-        "src",
-    }, 
-    .fingerprint = 0xa7919d87a88c9da 
-}
+.{ .name = .ZigDungeon, .zig = .{
+    .version = "0.16.0-dev.0+e9b8c8e7",
+}, .version = "0.0.1", .dependencies = .{
+    .raylib = .{
+        .path = "raylib",
+    },
+    .zclay = .{
+        .url = "git+https://github.com/johan0A/clay-zig-bindings#e0286c488a303b93501944ccde10730cc74ecd58",
+        .hash = "zclay-0.2.2-Ej1rkP3RAACYZGzQB5NGPaqfySgKfO26NYk5Ja6Z15gC",
+    },
+}, .paths = .{
+    "build.zig",
+    "build.zig.zon",
+    "raylib",
+    "README.md",
+    "src",
+}, .fingerprint = 0xa7919d87a88c9da }

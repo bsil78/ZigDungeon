@@ -2,11 +2,6 @@
 const std = @import("std");
 const libs = @import("../../libs/libs.zig");
 const geometry = libs.maths.geometry;
-pub const random = @import("subsystems/random.zig");
-pub const rendering = @import("subsystems/rendering.zig");
-pub const input = @import("subsystems/input.zig");
-pub const gamepad = @import("subsystems/gamepad.zig");
-pub const mouse = @import("subsystems/mouse.zig");
 // #endregion
 
 // #region Concrete imports
@@ -15,8 +10,9 @@ const Rect = geometry.shapes.Rect;
 const Timer = libs.time.measurement.Timer;
 // #endregion
 
-pub const EntityID = u32;
-pub const NULL_ENTITY = std.math.maxInt(EntityID);
+pub const inputs = @import("subsystems/inputs/inputs.zig");
+pub const random = @import("subsystems/random.zig");
+pub const rendering = @import("subsystems/rendering.zig");
 
 pub const UserSettings = struct {
     target_fps: u8,

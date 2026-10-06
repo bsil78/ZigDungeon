@@ -116,7 +116,10 @@ pub fn Vector2(T: type) type {
         fn toFloatV(self: *const Vector2(T), K: type) Vector2(K) {
             return switch (@typeInfo(T)) {
                 .float, .comptime_float => Vector2(K).init(@floatCast(self.x), @floatCast(self.y)),
-                .int, .comptime_int => Vector2(K).init( @floatFromInt(self.x), @floatFromInt(self.y), ),
+                .int, .comptime_int => Vector2(K).init(
+                    @floatFromInt(self.x),
+                    @floatFromInt(self.y),
+                ),
                 else => unreachable,
             };
         }
@@ -124,7 +127,10 @@ pub fn Vector2(T: type) type {
         fn toIntV(self: *const Vector2(T), K: type) Vector2(K) {
             return switch (@typeInfo(T)) {
                 .int, .comptime_int => Vector2(K).init(@intCast(self.x), @intCast(self.y)),
-                .float, .comptime_float => Vector2(K).init( @intFromFloat(self.x), @intFromFloat(self.y), ),
+                .float, .comptime_float => Vector2(K).init(
+                    @intFromFloat(self.x),
+                    @intFromFloat(self.y),
+                ),
                 else => unreachable,
             };
         }
@@ -184,6 +190,11 @@ pub fn Vector2(T: type) type {
                 Vector2(T).Down(),
                 Vector2(T).Left(),
             };
+        }
+
+        pub fn squaredDistanceTo(self: Vector2(T), other: Vector2(T)) T {
+            const delta = self.minus(other);
+            return delta.x * delta.x + delta.y * delta.y;
         }
     };
 }

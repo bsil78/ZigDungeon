@@ -12,11 +12,12 @@ const Entity = @import("../../entity.zig").Entity;
 const NPCEntityData = @import("npc_entity_data.zig").NPCEntityData;
 // #endregion
 
-pub fn resolve(world: *GameWorld, delta_seconds: f32) !void {
+pub fn resolve(world: *GameWorld) !void {
+    const delta_time = engine.getFrameTime();
     for (&world.entities) |*entity_opt| {
         if (entity_opt.*) |*entity| {
             const npc = entity.npcData() orelse continue;
-            try resolveNPCPlan(entity, npc, delta_seconds, world);
+            try resolveNPCPlan(entity, npc, delta_time, world);
             if (entity.health.isDead()) {
                 _ = world.destroyEntity(entity.id);
             }

@@ -22,6 +22,7 @@ pub fn build(b: *std.Build) void {
 
     const exe = createExecutable(b, target, optimize);
     linkRaylib(b, exe, target, optimize);
+    linkClay(b, exe, target, optimize);
     installAndRun(b, exe);
     addUnitTests(b, target, optimize);
 }
@@ -69,6 +70,19 @@ fn linkRaylib(
     });
 
     exe.root_module.linkLibrary(raylib_dep.artifact("raylib"));
+}
+
+fn linkClay(
+    b: *std.Build,
+    exe: *std.Build.Step.Compile,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+) void {
+    const zclay_dep = b.dependency("zclay", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.root_module.addImport("zclay", zclay_dep.module("zclay"));
 }
 
 fn installAndRun(b: *std.Build, exe: *std.Build.Step.Compile) void {

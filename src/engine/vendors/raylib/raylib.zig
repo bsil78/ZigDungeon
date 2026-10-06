@@ -1,7 +1,8 @@
 // #region Namespace imports
 const std = @import("std");
 const libs = @import("../../../libs/libs.zig");
-const raylib = libs.vendors.raylib;
+
+
 // #endregion
 
 // #region Concrete imports
@@ -10,6 +11,14 @@ const Vector2 = libs.maths.geometry.vectors.Vector2;
 const Color = libs.gfx.Color;
 const TypesHelper = @import("../../../libs/utils/utils.zig").TypesHelper;
 // #endregion
+
+pub const raylib_bindings = @cImport({
+    @cInclude("raylib.h");
+    @cInclude("raymath.h");
+    @cInclude("rlgl.h");
+});
+
+const raylib= raylib_bindings;
 
 pub const raylib_helpers = struct {
     /// Extrait une zone spécifique d'une Texture2D pour en créer une nouvelle
@@ -52,4 +61,9 @@ pub const raylib_helpers = struct {
             .height = @as(f32, rect.h),
         };
     }
+
+    pub fn vectorFromRaylib(vector: raylib.Vector2) Vector2(f32) {
+        return Vector2(f32).init(vector.x, vector.y);
+    }
 };
+

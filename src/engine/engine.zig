@@ -47,7 +47,7 @@ pub fn mainLoop() !void {
     _last_timestamp = _current_timestamp;
     _current_timestamp = _timer.lap();
     process_time = @as(f32, @floatFromInt(_current_timestamp)) / 1000.0;
-    delta = process_time;
+    delta = vendors.raylib.GetFrameTime();
     frames_counter += 1;
 }
 
@@ -58,4 +58,8 @@ pub fn process() !void {
 
 pub fn gameRunningTime() i64 {
     return Timer.getNs() - _program_start_timestamp;
+}
+
+pub fn getFrameTime() f32 {
+    return delta;
 }

@@ -3,7 +3,7 @@ const globals = @import("../globals.zig");
 // #endregion
 
 // #region Concrete imports
-const GameInput = @import("../input.zig").GameInput;
+const GameInputs = @import("../game_inputs.zig").GameInputs;
 const GameWorld = @import("../world.zig").GameWorld;
 const Vector2 = @import("../../libs/libs.zig").maths.geometry.vectors.Vector2;
 // #endregion
@@ -19,7 +19,7 @@ pub const Action = enum(u8) {
 pub const Inputs = struct {
     action: u8 = 0,
 
-    pub fn fromGameInput(game_input: GameInput) Inputs {
+    pub fn fromGameInput(game_input: GameInputs) Inputs {
         var inputs = Inputs{};
         if (game_input.move_up) inputs.action |= @intFromEnum(Action.move_up);
         if (game_input.move_left) inputs.action |= @intFromEnum(Action.move_left);
