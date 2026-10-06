@@ -7,6 +7,7 @@ const raylib = engine.vendors.raylib;
 
 // #region Concrete imports
 const Vector2 = @import("../../libs/libs.zig").maths.geometry.vectors.Vector2;
+const SizedRenderable = types.SizedRenderable;
 // #endregion
 
 pub const MouseVisual = enum {
@@ -16,7 +17,7 @@ pub const MouseVisual = enum {
 pub const Pointer = engine.resources.MousePointer(
     MouseVisual,
     8,
-    types.GameRenderer.RENDERABLE_CONTEXT_SIZE,
+    types.GameEngine.RendererInstance.RENDERABLE_CONTEXT_SIZE,
 );
 pub const PointerConfigurations = Pointer.Configurations;
 pub const PointerConfig = Pointer.Config;
@@ -31,14 +32,9 @@ pub fn resetPointer() void {
     pointer.reset();
 }
 
-pub fn update(state: MouseVisual) void {
-    const delta_time = engine.getFrameTime();
-    pointer.setState(state) catch unreachable;
-    pointer.update(delta_time);
-}
 
-pub fn addToRenderQueue(renderer: *types.GameRenderer, mouse_position: Vector2(f32)) !void {
-    if (pointer.renderable(std.math.maxInt(u16), mouse_position)) |pointer_renderable| {
-        try renderer.addToRenderQueue(pointer_renderable);
-    }
+pub fn getRenderable(activeVisual: MouseVisual, mouse_position: Vector2(f32)) !?SizedRenderable {
+    try pointer.setVisual(activeVisual);
+    pointer.updateAnimation();
+    return pointer.renderable(std.math.maxInt(u16), mouse_position);
 }

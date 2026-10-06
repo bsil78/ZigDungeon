@@ -1,7 +1,7 @@
 // #region Namespace imports
 const std = @import("std");
 const libs = @import("../../libs/libs.zig");
-const raylib = libs.vendors.raylib;
+const raylib = @import("../vendors/vendors.zig").raylib;
 const rendering = @import("../core/subsystems/rendering.zig");
 const sprite_module = @import("sprites/Sprite.zig");
 const AnimatedSprite = @import("sprites/AnimatedSprite.zig").AnimatedSprite;
@@ -11,36 +11,39 @@ const AnimatedSprite = @import("sprites/AnimatedSprite.zig").AnimatedSprite;
 const Sprite = sprite_module.Sprite;
 const Vector2 = libs.maths.geometry.vectors.Vector2;
 const Rect = libs.maths.geometry.shapes.Rect;
-const SizedRenderable = rendering.Renderable;
 const Transform = rendering.Transform;
+const Renderable = rendering.Renderable;
 // #endregion
 
 pub fn MousePointer(
-    comptime State: type,
+    comptime MouseVisuals: type,
     comptime MAX_FRAMES: u8,
     comptime MAX_CONTEXT_SIZE: usize,
 ) type {
     comptime {
-        if (@typeInfo(State) != .@"enum") @compileError("MousePointer state must be an enum");
-        if (MAX_FRAMES == 0) @compileError("MousePointer requires capacity for at least one animation frame");
+        if (@typeInfo(MouseVisuals) != .@"enum") @compileError("MousePointer MouseVisuals must be an enum");
+        if (MAX_FRAMES == 0) @compileError("MousePointer requires capacity for at least one animation/sprite frame");
     }
 
-    const state_count = @typeInfo(State).@"enum".fields.len;
-    const FirstState: State = @enumFromInt(@typeInfo(State).@"enum".fields[0].value);
-    const Renderable = SizedRenderable(MAX_CONTEXT_SIZE);
+    const visuals_count = @typeInfo(MouseVisuals).@"enum".fields.len;
+    const FirstVisual: MouseVisuals = @enumFromInt(@typeInfo(MouseVisuals).@"enum".fields[0].value);
+
     const AnimatedSpriteType = AnimatedSprite(1, MAX_FRAMES, MAX_CONTEXT_SIZE);
 
     return struct {
-        pub const StateCount = state_count;
+        const Self = @This();
+        const SizedRenderable = Renderable(MAX_CONTEXT_SIZE);
 
-        pub const Visual = union(enum) {
+        pub const StateCount = visuals_count;
+
+        pub const VisualType = union(enum) {
             hidden,
             sprite: Sprite,
             animated_sprite: AnimatedSpriteType,
         };
 
         pub const Config = struct {
-            visual: Visual = .hidden,
+            visual: VisualType = .hidden,
             hot_reference: Vector2(f32) = Vector2(f32).Zero(),
             visual_offset: Vector2(f32) = Vector2(f32).Zero(),
             z_layer: i16 = 100,
@@ -75,13 +78,13 @@ pub fn MousePointer(
         };
 
         pub const Error = error{
-            InvalidState,
+            InvalidVisual,
             InvalidPointerConfig,
         };
         pub const Configurations = [StateCount]Config;
 
         configurations: Configurations,
-        current_state: State = FirstState,
+        current_state: MouseVisuals = FirstVisual,
 
         pub fn init(configurations: [StateCount]Config) Error!Self {
             for (&configurations) |*config| {
@@ -90,28 +93,28 @@ pub fn MousePointer(
             return .{ .configurations = configurations };
         }
 
-        pub fn setState(self: *Self, state: State) Error!void {
-            const index = stateIndex(state) orelse return error.InvalidState;
+        pub fn setVisual(self: *Self, state: MouseVisuals) Error!void {
+            const index = visualIndex(state) orelse return Error.InvalidVisual;
             if (self.current_state == state) return;
             self.current_state = state;
             resetAnimation(&self.configurations[index]);
         }
 
-        pub fn update(self: *Self, delta_seconds: f32) void {
-            const index = stateIndex(self.current_state).?;
+        pub fn reset(self: *Self) void {
+            self.current_state = FirstVisual;
+            resetAnimation(&self.configurations[visualIndex(FirstVisual).?]);
+        }
+
+        pub fn updateAnimation(self: *Self) void {
+            const index = visualIndex(self.current_state).?;
             switch (self.configurations[index].visual) {
                 .hidden, .sprite => {},
-                .animated_sprite => |*sprite| sprite.update(delta_seconds),
+                .animated_sprite => |*sprite| sprite.updateAnimation(),
             }
         }
 
-        pub fn reset(self: *Self) void {
-            self.current_state = FirstState;
-            resetAnimation(&self.configurations[stateIndex(FirstState).?]);
-        }
-
-        pub fn renderable(self: *const Self, id: u16, mouse_position: Vector2(f32)) ?Renderable {
-            const config = self.configurations[stateIndex(self.current_state).?];
+        pub fn renderable(self: *const Self, id: u16, mouse_position: Vector2(f32)) ?SizedRenderable {
+            const config = self.configurations[visualIndex(self.current_state).?];
             const transform = Transform{
                 .position = mouse_position
                     .minus(config.hot_reference)
@@ -124,19 +127,17 @@ pub fn MousePointer(
             };
         }
 
-        const Self = @This();
-
         fn validateConfig(config: Config) Error!void {
             if (!std.math.isFinite(config.hot_reference.x) or !std.math.isFinite(config.hot_reference.y) or
                 !std.math.isFinite(config.visual_offset.x) or !std.math.isFinite(config.visual_offset.y))
             {
-                return error.InvalidPointerConfig;
+                return Error.InvalidPointerConfig;
             }
             switch (config.visual) {
                 .hidden => {},
                 .sprite => |sprite| {
                     if (sprite.texture.width <= 0 or sprite.texture.height <= 0) {
-                        return error.InvalidPointerConfig;
+                        return Error.InvalidPointerConfig;
                     }
                 },
                 .animated_sprite => |sprite| {
@@ -144,7 +145,7 @@ pub fn MousePointer(
                         !std.math.isFinite(sprite.animations[0].frames_per_second) or
                         sprite.animations[0].frames_per_second <= 0)
                     {
-                        return error.InvalidPointerConfig;
+                        return Error.InvalidPointerConfig;
                     }
                 },
             }
@@ -160,7 +161,7 @@ pub fn MousePointer(
             }
         }
 
-        fn spriteRenderable(id: u16, sprite: Sprite, transform: Transform, z_layer: i16) Renderable {
+        fn spriteRenderable(id: u16, sprite: Sprite, transform: Transform, z_layer: i16) SizedRenderable {
             const texture = sprite.texture;
             const source = Rect(f32).init(
                 0,
@@ -170,14 +171,14 @@ pub fn MousePointer(
             );
             return .{
                 .id = id,
-                .renderingFn = Renderable.drawTexture,
-                .renderingCtx = Renderable.textureRegionContext(texture, source, transform),
+                .renderingFn = SizedRenderable.drawTexture,
+                .renderingCtx = SizedRenderable.textureRegionContext(texture, source, transform),
                 .z_layer = z_layer,
             };
         }
 
-        fn stateIndex(state: State) ?usize {
-            inline for (@typeInfo(State).@"enum".fields, 0..) |field, index| {
+        fn visualIndex(state: MouseVisuals) ?usize {
+            inline for (@typeInfo(MouseVisuals).@"enum".fields, 0..) |field, index| {
                 if (@intFromEnum(state) == field.value) return index;
             }
             return null;

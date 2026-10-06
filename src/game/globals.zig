@@ -10,7 +10,6 @@ pub const asset_data = @import("assets/assets.zig");
 // #endregion
 
 // #region Concrete imports
-const UserSettings = @import("../engine/core/core.zig").UserSettings;
 const Vector2 = geometry.vectors.Vector2;
 const Rect = geometry.shapes.Rect;
 const Timer = libs.time.measurement.Timer;
@@ -48,23 +47,27 @@ pub const messages = struct {
     pub const tilemap_render_error = "Tilemap render error: {}\n";
 };
 
-pub fn project_settings() !UserSettings {
-    var timer = Timer{};
-    const seed = timer.start();
-    return .{
-        // The project_settings module contains global configuration settings for the game, such as target FPS, window size, and game name.
-        // The live RNG uses the timer seed; repeatable runs require a fixed or replay seed.
+pub const ProjectSettings = struct {
+    target_fps: u8 = 60,
+    window_size: Vector2(u32),
+    window_rect: Rect(u32),
+    game_name: [:0]const u8,
+    random_mode: random.RandomMode,
 
-        .target_fps = 60,
-        .window_size = WINDOW_SIZE,
-        .window_rect = Rect(u32).initV(WINDOW_SIZE),
-        .game_name = "Zig Dungeon",
-        .random_mode = .{
-            .live = try random.LiveRandom.init(seed, struct {
-                fn flush(_: *const [512]u64) GameRandom.Error!void {
-                    //do nothing
-                }
-            }.flush),
-        },
-    };
-}
+    pub fn init() !ProjectSettings {
+        const seed = Timer.getNs();
+        const settings = ProjectSettings{
+            .window_size = WINDOW_SIZE,
+            .window_rect = Rect(u32).initV(WINDOW_SIZE),
+            .game_name = "ZigDungeon",
+            .random_mode = .{
+                .live = try random.LiveRandom.init(seed, struct {
+                    fn flush(_: *const [512]u64) GameRandom.Error!void {
+                        //do nothing
+                    }
+                }.flush),
+            },
+        };
+        return settings;
+    }
+};

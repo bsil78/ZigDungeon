@@ -94,14 +94,13 @@ pub fn AnimatedSprite(
             self.elapsed_seconds = 0;
         }
 
-        pub fn update(self: *Self, delta_seconds: f32) void {
-            if (!std.math.isFinite(delta_seconds) or delta_seconds <= 0) return;
-
+        pub fn updateAnimation(self: *Self) void {
+            const delta_time = raylib.GetFrameTime();
             var animation = &self.animations[self.current_animation];
             if (!animation.loop and animation.current_frame == animation.frame_count - 1) return;
 
             const interval = 1.0 / @as(f64, animation.frames_per_second);
-            const elapsed = self.elapsed_seconds + @as(f64, delta_seconds);
+            const elapsed = self.elapsed_seconds + @as(f64, delta_time);
             const complete_steps_float = @floor(elapsed / interval);
 
             if (animation.loop) {

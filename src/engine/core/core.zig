@@ -14,10 +14,4 @@ pub const inputs = @import("subsystems/inputs/inputs.zig");
 pub const random = @import("subsystems/random.zig");
 pub const rendering = @import("subsystems/rendering.zig");
 
-pub const UserSettings = struct {
-    target_fps: u8,
-    window_size: Vector2(u32),
-    window_rect: Rect(u32),
-    game_name: [:0]const u8,
-    random_mode: random.RandomMode,
-};
+

@@ -11,7 +11,10 @@ var keyboard: Keyboard = .{};
 var gamepad: Gamepad = .{};
 var mouse: Mouse = .{};
 
-
+pub fn poll(viewport: Rect(f32)) void {
+    // do not call raylib.poll() ; it empties mouse buttons events queue
+    updateMouse(viewport);
+}
 
 pub fn updateMouse(viewport: Rect(f32)) void {
     const delta_time = raylib.GetFrameTime();

@@ -1,20 +1,24 @@
 // #region Namespace imports
-const libs = @import("../../../libs/libs.zig");
-const resources = @import("../../../engine/resources/resources.zig");
+const libs = @import("../../../../libs/libs.zig");
+const engine = @import("../../../../engine/engine.zig");
+const resources = engine.resources;
 // #endregion
 
 // #region Concrete imports
 const Rect = libs.maths.geometry.shapes.Rect;
-const GameRenderer = @import("../../game_types.zig").GameRenderer;
-const NPCEntityData = @import("../generic/npc_entity_data.zig").NPCEntityData;
-const Visual = @import("../../components/visual.zig").Visual;
-const Layers = @import("../../game_enums.zig").Layers;
+const GameEngine = @import("../../../game_types.zig").GameEngine;
+const NPCEntityData = @import("../generic/npc_entity_data.zig");
+const Visual = @import("../../../components/visual.zig").Visual;
+const Layers = @import("../../../game_enums.zig").Layers;
 const SpriteSheet = resources.SpriteSheet;
+const GameRandom = engine.core.random.GameRandom;
+const AI = @import("../generic/ai.zig");
 // #endregion
 
-const SlimeAnimation = resources.AnimatedSprite(1, 2, GameRenderer.RENDERABLE_CONTEXT_SIZE);
+const SlimeAnimation = resources.AnimatedSprite(1, 2, GameEngine.RendererInstance.RENDERABLE_CONTEXT_SIZE);
 
 pub const Slime = struct {
+
     const SlimeAnimationConfig = resources.AnimatedSpriteConfig(2);
 
     fn animationConfig() SlimeAnimationConfig.Error!SlimeAnimationConfig {
@@ -29,16 +33,24 @@ pub const Slime = struct {
         );
     }
 
-    npc: NPCEntityData = .{},
+    npc: NPCEntityData = .{
+        .normal_speed = 0.1,
+        .max_speed = 1.0,
+    },
     animation: SlimeAnimation,
 
-    pub fn create(sprite_sheet: SpriteSheet) !Slime {
+    pub fn init(sprite_sheet: SpriteSheet) !Slime {
         const animation = try SlimeAnimation.Animation.init(sprite_sheet.texture, try animationConfig());
-        return .{ .animation = try SlimeAnimation.init(.{animation}, 0) };
+        return .{ 
+            .npc = .{
+                
+            }, 
+            .animation = try SlimeAnimation.init(.{animation}, 0)
+        };
     }
 
-    pub fn update(self: *Slime, delta_seconds: f32) void {
-        self.animation.update(delta_seconds);
+    pub fn update(self: *Slime) void {
+        self.animation.updateAnimation();
     }
 
     pub fn visual(self: *const Slime) Visual {

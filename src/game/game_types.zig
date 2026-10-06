@@ -25,8 +25,8 @@ const MAP_RENDERING_CONTEXT = struct {
     tilesSet: *const GameTilesSet,
 };
 const MAX_RENDERING_CONTEXT_SIZE = @max(@sizeOf(MAP_RENDERING_CONTEXT), @sizeOf(raylib.Texture2D));
-pub const GameRenderer = core.rendering.Renderer(globals.MAX_RENDERABLES, MAX_RENDERING_CONTEXT_SIZE);
+pub const GameEngine = engine.Instance(globals.MAX_RENDERABLES, MAX_RENDERING_CONTEXT_SIZE).EngineInstance;
 pub const GameResources = struct {
     tilesMap: GameTilesMap = undefined,
 };
-pub const SizedRenderable = Renderable(GameRenderer.RENDERABLE_CONTEXT_SIZE);
+pub const SizedRenderable = Renderable(GameEngine.RendererInstance.RENDERABLE_CONTEXT_SIZE);

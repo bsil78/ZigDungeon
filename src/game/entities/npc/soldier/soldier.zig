@@ -1,12 +1,14 @@
 // #region Namespace imports
-const engine = @import("../../../engine/engine.zig");
+const engine = @import("../../../../engine/engine.zig");
 // #endregion
 
 // #region Concrete imports
 const Sprite = engine.resources.Sprite;
-const Visual = @import("../../components/visual.zig").Visual;
-const Layers = @import("../../game_enums.zig").Layers;
-const NPCEntityData = @import("../generic/npc_entity_data.zig").NPCEntityData;
+const Visual = @import("../../../components/visual.zig").Visual;
+const Layers = @import("../../../game_enums.zig").Layers;
+const NPCEntityData = @import("../generic/npc_entity_data.zig");
+const GameRandom = engine.core.random.GameRandom;
+const ai = @import("../generic/ai.zig");
 // #endregion
 
 pub const Soldier = struct {

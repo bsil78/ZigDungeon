@@ -1,65 +1,74 @@
 // #region Namespace imports
 const std = @import("std");
 const libs = @import("../libs/libs.zig");
-const maths = libs.maths;
-pub const vendors = @import("vendors/vendors.zig");
-pub const core = @import("core/core.zig");
-const rendering = core.rendering;
-pub const resources = @import("resources/resources.zig");
-pub const utils = @import("utils/utils.zig");
+const rendering = @import("core/core.zig").rendering;
+const inputs = @import("core/core.zig").inputs;
 // #endregion
 
 // #region Concrete imports
 const Color = libs.gfx.Color;
-const UserSettings = core.UserSettings;
 const Renderer = rendering.Renderer;
 const Timer = libs.time.measurement.Timer;
-const GameRandom = core.random.GameRandom;
+const Vector2 = libs.maths.geometry.vectors.Vector2;
+const Rect = libs.maths.geometry.shapes.Rect;
+const GameRandom = @import("core/core.zig").random.GameRandom;
+const RandomMode = @import("core/core.zig").random.RandomMode;
 // #endregion
 
-pub var random: GameRandom = undefined;
-pub var process_time: f32 = 0.0;
-pub var delta: f32 = 0.0;
-pub var frames_counter: u32 = 0;
+pub const resources = @import("resources/resources.zig");
+pub const utils = @import("utils/utils.zig");
+pub const vendors = @import("vendors/vendors.zig");
+pub const core = @import("core/core.zig");
 
-var _renderer_queue_size: u16 = 0;
-var _timer: Timer = undefined;
-var _program_start_timestamp: u64 = 0;
-var _last_timestamp: u64 = 0;
-var _current_timestamp: u64 = 0;
+pub const EngineSettings = struct {
+    target_fps: u8,
+    window_size: Vector2(u32),
+    window_rect: Rect(u32),
+    game_name: [:0]const u8,
+    random_mode: RandomMode,
+};
 
-pub fn init(settings: UserSettings, comptime MAX_RENDERABLES: u16, comptime MAX_CONTEXT_SIZE: usize) !Renderer(MAX_RENDERABLES, MAX_CONTEXT_SIZE) {
-    _timer = Timer{};
-    _program_start_timestamp = _timer.start();
-    _current_timestamp = _program_start_timestamp;
-    _last_timestamp = _program_start_timestamp;
-    _renderer_queue_size = MAX_RENDERABLES;
-    random = try GameRandom.init(settings.random_mode);
+pub fn Instance(comptime MAX_RENDERABLES: u16, comptime MAX_CONTEXT_SIZE: usize) type {
+    return struct {
+        pub const EngineInstance = Instance(MAX_RENDERABLES, MAX_CONTEXT_SIZE);
+        pub const RendererInstance = Renderer(MAX_RENDERABLES, MAX_CONTEXT_SIZE);
 
-    return try Renderer(MAX_RENDERABLES, MAX_CONTEXT_SIZE).init(.{
-        .window_size = settings.window_size,
-        .window_rect = settings.window_rect,
-        .target_fps = settings.target_fps,
-    }, settings.game_name);
-}
+        pub const Error = error{
+            GameLoopFailed,
+        };
 
-pub fn mainLoop() !void {
-    _last_timestamp = _current_timestamp;
-    _current_timestamp = _timer.lap();
-    process_time = @as(f32, @floatFromInt(_current_timestamp)) / 1000.0;
-    delta = vendors.raylib.GetFrameTime();
-    frames_counter += 1;
-}
+        random: GameRandom = undefined,
+        frames_count: u32 = 0,
+        renderer: RendererInstance = undefined,
+        timer: Timer = undefined,
 
-pub fn process() !void {
-    _last_timestamp = _current_timestamp;
-    _current_timestamp = Timer.getNs();
-}
+        pub fn init(settings: EngineSettings) !EngineInstance {
+            return EngineInstance{
+                .random = try GameRandom.init(settings.random_mode),
+                .timer = Timer.init(),
+                .renderer = try RendererInstance.init(.{
+                    .window_size = settings.window_size,
+                    .window_rect = settings.window_rect,
+                    .target_fps = settings.target_fps,
+                }, settings.game_name),
+            };
+        }
 
-pub fn gameRunningTime() i64 {
-    return Timer.getNs() - _program_start_timestamp;
-}
+        pub fn process(self: *EngineInstance, game_loop: *const fn (f32) Error!void) !void {
+            _ = try self.timer.lap();
+            const delta = vendors.raylib.GetFrameTime();
+            self.frames_count += 1;
+            try game_loop(delta);
+            try self.renderer.render();
+            self.renderer.clearRenderingQueue();
+        }
 
-pub fn getFrameTime() f32 {
-    return delta;
+        pub fn gameRunningTime(self: *EngineInstance) i64 {
+            return Timer.getNs() - self._program_start_timestamp;
+        }
+
+        pub fn processTime(self: *EngineInstance) f32 {
+            return @as(f32, @floatFromInt(self.timer.startTime - Timer.getNs())) / 1000.0;
+        }
+    };
 }

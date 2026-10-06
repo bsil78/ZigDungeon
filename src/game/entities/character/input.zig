@@ -1,11 +1,11 @@
 // #region Namespace imports
-const globals = @import("../globals.zig");
+const globals = @import("../../globals.zig");
 // #endregion
 
 // #region Concrete imports
-const GameInputs = @import("../game_inputs.zig").GameInputs;
-const GameWorld = @import("../world.zig").GameWorld;
-const Vector2 = @import("../../libs/libs.zig").maths.geometry.vectors.Vector2;
+const GameInputs = @import("../../game_inputs.zig").GameInputs;
+const GameWorld = @import("../../world.zig");
+const Vector2 = @import("../../../libs/libs.zig").maths.geometry.vectors.Vector2;
 // #endregion
 
 pub const Action = enum(u8) {

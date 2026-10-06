@@ -1,11 +1,11 @@
 // #region Namespace imports
-const engine = @import("../../engine/engine.zig");
+const engine = @import("../../../engine/engine.zig");
 // #endregion
 
 // #region Concrete imports
 const Sprite = engine.resources.Sprite;
-const Visual = @import("../components/visual.zig").Visual;
-const Layers = @import("../game_enums.zig").Layers;
+const Visual = @import("../../components/visual.zig").Visual;
+const Layers = @import("../../game_enums.zig").Layers;
 // #endregion
 
 // Represents the player character in the game world,

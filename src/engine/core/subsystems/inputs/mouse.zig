@@ -85,11 +85,10 @@ pub const MouseState = struct {
 state: MouseState = .{},
 
 pub fn update(self: *Mouse, viewport: Rect(f32), delta_seconds: f32) void {
-    const screen_position = getMousePositionInClient(f32) orelse {
+    const mouse_position_in_window = getMousePositionInGameWindow(f32) orelse {
         std.log.err("Failed to read mouse position in the window client area", .{});
         return;
     };
-    const window_position = Vector2(f32).init(screen_position.x, screen_position.y);
     const viewport_position = Vector2(f32).init(viewport.x, viewport.y);
     const local_viewport = Rect(f32).init(0, 0, viewport.w, viewport.h);
 
@@ -97,7 +96,7 @@ pub fn update(self: *Mouse, viewport: Rect(f32), delta_seconds: f32) void {
     self.state.wheel = rlh.vectorFromRaylib(raylib.GetMouseWheelMoveV());
 
     const previous_position = self.state.position;
-    self.state.position = window_position.minus(viewport_position);
+    self.state.position = mouse_position_in_window.minus(viewport_position);
     self.state.delta = if (self.state.has_previous_position) self.state.position.minus(previous_position) else Vector2(f32).Zero();
 
     const was_inside_viewport = self.state.inside_viewport;
@@ -176,7 +175,7 @@ fn releaseCursor(self: *Mouse) void {
     self.state.captured = false;
 }
 
-fn getMousePositionInClient(comptime T: type) ?Vector2(T) {
+fn getMousePositionInGameWindow(comptime T: type) ?Vector2(T) {
     switch(comptime builtin.os.tag){
         .windows =>  {
             var point: plateforms.Windows.TYPES.WindowsPoint = undefined;

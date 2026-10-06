@@ -8,10 +8,9 @@ const libs = @import("../libs/libs.zig");
 const globals = @import("globals.zig");
 const types = @import("game_types.zig");
 const game_inputs = @import("game_inputs.zig");
-const char_input = @import("character/input.zig");
-const char_res = @import("character/resolution.zig");
-const npc_ai = @import("npc/generic/ai.zig");
-const npc_resolution = @import("npc/generic/resolution.zig");
+const character_input = @import("entities/character/input.zig");
+const ai = @import("entities/npc/generic/ai.zig");
+const resolution = @import("entities/resolution.zig");
 const clayh = libs.vendors.clay_helper;
 const ui = @import("ui/ui.zig");
 const game_over = ui.game_over;
@@ -20,11 +19,10 @@ const mouse_rendering = ui.mouse_rendering;
 
 // #region Concrete imports
 const Layers = @import("game_enums.zig").Layers;
-const GameWorld = @import("world.zig").GameWorld;
-const GameRenderer = types.GameRenderer;
+const GameWorld = @import("world.zig");
+const GameEngine = types.GameEngine;
 const GameTilesSet = types.GameTilesSet;
 const Color = libs.gfx.Color;
-const UserSettings = core.UserSettings;
 const Vector2 = libs.maths.geometry.vectors.Vector2;
 const Rect = libs.maths.geometry.shapes.Rect;
 const Assets = @import("assets/assets.zig").Assets;
@@ -32,40 +30,43 @@ const PointerConfigurations = mouse_rendering.PointerConfigurations;
 const PointerConfig = mouse_rendering.PointerConfig;
 // #endregion
 
-var _world: GameWorld = undefined;
-var _renderer: GameRenderer = undefined;
-var _project_settings: UserSettings = undefined;
+var _project_settings: globals.ProjectSettings = undefined;
+var _game_state: GameStates = .RUNNING;
+var _world: ?GameWorld = null;
+var _engine: GameEngine = undefined;
 var _assets: Assets = undefined;
+var _exit_requested: bool = false;
 
 var _clay_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
 
-const GameState = enum {
+const GameStates = enum {
     RUNNING,
     GAME_OVER,
 };
 
 pub fn start() !void {
-    _renderer = try startEngine();
+    _engine = try startEngine();
     _assets = try Assets.init();
     defer _assets.deinit();
     defer _clay_arena.deinit();
     try clayh.initialize(_clay_arena.allocator(), _project_settings.window_rect);
+    game_over.init();
     try setup_mouse();
+    defer game_inputs.releaseMouseToOS();
     try doGameLoop();
 }
 
-fn startEngine() !GameRenderer {
-    _project_settings = try globals.project_settings();
-
-    const renderer = try engine.init(.{
+fn startEngine() !GameEngine {
+    _project_settings = try globals.ProjectSettings.init();
+    const engine_instance = try GameEngine.init(.{
         .target_fps = _project_settings.target_fps,
         .window_rect = _project_settings.window_rect,
         .window_size = _project_settings.window_size,
         .game_name = _project_settings.game_name,
         .random_mode = _project_settings.random_mode,
-    }, globals.MAX_RENDERABLES, types.GameRenderer.RENDERABLE_CONTEXT_SIZE);
-    errdefer engine.deinit();
-    return renderer;
+    });
+    errdefer engine_instance.deinit();
+    return engine_instance;
 }
 
 fn setup_mouse() !void {
@@ -73,21 +74,17 @@ fn setup_mouse() !void {
     const pointer_sprite: engine.resources.Sprite = .{
         .texture = try _assets.mouse_pointers_spritesheet.getRegionTexture(Rect(u16).init(0, 0, 12, 16)),
     };
-    try mouse_rendering.initialize(.{
-        PointerConfig.static(
-            pointer_sprite,
-            Vector2(f32).Zero(),
-            Vector2(f32).Zero(),
-            @intFromEnum(Layers.MOUSE_POINTER),
-        )
-    });
+    try mouse_rendering.initialize(.{PointerConfig.static(
+        pointer_sprite,
+        Vector2(f32).Zero(),
+        Vector2(f32).Zero(),
+        @intFromEnum(Layers.MOUSE_POINTER),
+    )});
 }
 
 fn doGameLoop() !void {
-    while (true) {
-        _world = try GameWorld.init(&_assets, _project_settings.window_rect);
-        const restart_game = try run();
-        if (!restart_game) break;
+    while (!_exit_requested and !raylib.WindowShouldClose()) {
+        try _engine.process(gameLoop);
     }
 }
 
@@ -95,56 +92,77 @@ fn doGameLoop() !void {
 // It returns a boolean indicating whether the game should be restarted or not.
 // The function continues to run until the window is closed or the player chooses to restart the game after a game over.
 // The game loop checks player input, updates character and NPC states, resolves actions, and renders the game world.
-fn run() !bool {
-    var game_state = GameState.RUNNING;
+fn gameLoop(delta_time: f32) GameEngine.Error!void {
+    if (_world == null) try initWorld();
 
-    beginRun();
+    _world.?.newTick();
 
-    defer game_inputs.releaseMouseToOS();
-    errdefer _world.deinit();
+    const _inputs = game_inputs.poll();
 
-    while (!raylib.WindowShouldClose()) {
-        try engine.mainLoop();
-        _world.newTick();
-        _world.updateAnimations();
+    //std.log.info("Game state : {s}", .{@tagName(_game_state)});
 
-        const _inputs = game_inputs.poll();
-
-        //std.log.info("Game state : {s}", .{@tagName(game_state)});
-        switch (game_state) {
-            .RUNNING => {
-                const character_inputs = char_input.Inputs.fromGameInput(_inputs);
-                char_input.update(&_world, &character_inputs);
-                //std.log.info("World tick : {d}\n", .{_world.tick});
-                try npc_ai.update(&_world);
-                try npc_resolution.resolve(&_world);
-                char_res.resolve(&_world);
-                try prepareWorldRendering();
-                // npc_resolution.clearPlans(&_world);
-                if (_world.getCharacter() == null) {
-                    game_state = GameState.GAME_OVER;
-                }
-            },
-            .GAME_OVER => {
-                try prepareWorldRendering();
-                try _renderer.addToRenderQueue(ui.game_over.screen());
-                if (_inputs.restart or game_over.restartButtonPressed()) {
-                    _world.deinit();
-                    return true;
-                }
-            },
-        }
-        mouse_rendering.update(pointerFromGameState(game_state));
-        try _renderer.render();
-        _renderer.clearRenderingQueue();
-        //if(_world.tick>2) break;
+    switch (_game_state) {
+        .RUNNING => doRunningState(_inputs, delta_time) catch |err| {
+            std.log.err("on Running state : {any}", .{err});
+            return GameEngine.Error.GameLoopFailed;
+        },
+        .GAME_OVER => doGameOverState(_inputs, delta_time) catch |err| {
+            std.log.err("on Game Over state : {any}", .{err});
+            return GameEngine.Error.GameLoopFailed;
+        },
     }
-    _world.deinit();
-    raylib.CloseWindow();
-    return false;
+    try mousePointerRendering(_inputs);
 }
 
-fn pointerFromGameState(state: GameState) mouse_rendering.MouseVisual {
+fn initWorld() GameEngine.Error!void {
+    _world = GameWorld.init(&_assets, _project_settings.window_rect) catch |err| {
+        std.log.err("Cannot init world !\n\t{any}", .{err});
+        return GameEngine.Error.GameLoopFailed;
+    };
+    errdefer if (_world) |world| world.deinit();
+    beginRun();
+}
+
+fn doRunningState(_inputs: game_inputs.GameInputs, delta_time: f32) !void {
+    var world = &_world.?;
+    const character_inputs = character_input.Inputs.fromGameInput(_inputs);
+    character_input.update(world, &character_inputs);
+    //std.log.info("World tick : {d}\n", .{world.tick});
+    //std.log.info("Entity 4 before braining : {any} / {s}", .{ world.entities[4].?.readNpcData().action_plan, @tagName(world.entities[4].?.readNpcData().state) });
+    try ai.update(world, &_engine.random);
+    //std.log.info("Entity 4 after braining : {any} / {s}", .{ world.entities[4].?.readNpcData().action_plan, @tagName(world.entities[4].?.readNpcData().state) });
+    try resolution.resolve_entities(world, delta_time, &_engine.random);
+    //std.log.info("Entity 4 after resolve : {any} / {s}", .{ world.entities[4].?.readNpcData().action_plan, @tagName(world.entities[4].?.readNpcData().state) });
+    try prepareWorldRendering();
+    if (world.getCharacter() == null) {
+        _game_state = GameStates.GAME_OVER;
+    }
+}
+
+fn doGameOverState(_inputs: game_inputs.GameInputs, _: f32) !void {
+    var world = _world.?;
+    if (_inputs.restart or game_over.restartButtonPressed()) {
+        world.deinit();
+        _world = null;
+        _game_state = GameStates.RUNNING;
+    } else {
+        try prepareWorldRendering();
+        try _engine.renderer.addToRenderQueue(ui.game_over.screen());
+    }
+}
+
+fn mousePointerRendering(inputs: game_inputs.GameInputs) GameEngine.Error!void {
+    const optionalRenderable =
+        mouse_rendering.getRenderable(pointerFromGameState(_game_state), inputs.mouse.position) catch unreachable;
+    if (optionalRenderable) |renderable| {
+        _engine.renderer.addToRenderQueue(renderable) catch |err| return {
+            std.log.err("When rendering mouse pointer : {any}", .{err});
+            return GameEngine.Error.GameLoopFailed;
+        };
+    }
+}
+
+fn pointerFromGameState(state: GameStates) mouse_rendering.MouseVisual {
     switch (state) {
         .RUNNING => return mouse_rendering.MouseVisual.arrow,
         .GAME_OVER => return mouse_rendering.MouseVisual.arrow,
@@ -158,12 +176,14 @@ fn beginRun() void {
 }
 
 fn prepareWorldRendering() !void {
-    const map_renderable = _world.resources.tilesMap.renderable(GameTilesSet, @constCast(&_assets.tileset.?), GameRenderer.RENDERABLE_CONTEXT_SIZE, @intFromEnum(Layers.MAP));
-    try _renderer.addToRenderQueue(map_renderable);
+    std.debug.assert(_world != null);
+    var world = _world.?;
+    world.updateAnimations();
+    const map_renderable =
+        world.resources.tilesMap
+            .renderable(GameTilesSet, @constCast(&_assets.tileset.?), GameEngine.RendererInstance.RENDERABLE_CONTEXT_SIZE, @intFromEnum(Layers.MAP));
+    try _engine.renderer.addToRenderQueue(map_renderable);
     try queueEntities();
-    if (game_inputs.mouseState().captured) {
-        try mouse_rendering.addToRenderQueue(&_renderer, game_inputs.mousePosition());
-    }
 }
 
 fn gameOverScreen() !void {
@@ -177,15 +197,17 @@ fn gameOverScreen() !void {
 }
 
 pub fn queueEntities() !void {
-    for (&_world.entities) |*entity_opt| {
+    std.debug.assert(_world != null);
+    const world = _world.?;
+    for (&world.entities) |*entity_opt| {
         if (entity_opt.*) |*entity| {
-            try _renderer.addToRenderQueue(entity.renderable());
+            try _engine.renderer.addToRenderQueue(entity.renderable());
             switch (entity.data) {
                 .character => {
-                    try _renderer.addToRenderQueue(try ui.health_bar.characterHealthBar(entity.health, @floatFromInt(entity.visual().width()), entity.visualTransform()));
+                    try _engine.renderer.addToRenderQueue(try ui.health_bar.characterHealthBar(entity.health, @floatFromInt(entity.visual().width()), entity.visualTransform()));
                 },
                 .soldier, .slime => {
-                    try _renderer.addToRenderQueue(try ui.health_bar.enemyHealthBar(entity.health, @floatFromInt(entity.visual().width()), entity.visualTransform()));
+                    try _engine.renderer.addToRenderQueue(try ui.health_bar.enemyHealthBar(entity.health, @floatFromInt(entity.visual().width()), entity.visualTransform()));
                 },
             }
         }

@@ -22,6 +22,10 @@ var _restart_pressed = false;
 
 var _restart_button_id: clay.ElementId = undefined;
 
+pub fn init() void {
+    _restart_button_id = .ID("GameOverRestartButton");
+}
+
 pub fn hide() void {
     _restart_pressed = false;
 }
@@ -31,11 +35,13 @@ pub fn restartButtonPressed() bool {
 }
 
 pub fn screen() SizedRenderable {
-    _pointer_pressed = game_inputs.mouseState().isButtonPressed(.left);
-    _pointer_down = game_inputs.mouseState().isButtonDown(.left);
+    const mouseState = game_inputs.mouseState();
+    const mousePosition = game_inputs.mouseGamePosition();
+    _pointer_pressed = mouseState.isButtonPressed(.left);
+    _pointer_down = mouseState.isButtonDown(.left);
     _pointer_position = .{
-        .x = game_inputs.mouseHotSpotPosition().x,
-        .y = game_inputs.mouseHotSpotPosition().y,
+        .x = mousePosition.x,
+        .y = mousePosition.y,
     };
     return SizedRenderable{
         .id = 0b1111111111111111,
@@ -83,7 +89,7 @@ fn draw() void {
                 .alignment = .center,
             });
             clay.UI()(.{
-                .id = .ID("GameOverRestartButton"),
+                .id = _restart_button_id,
                 .layout = .{
                     .sizing = .{ .w = .fixed(240), .h = .fixed(54) },
                     .child_alignment = .center,
@@ -100,6 +106,7 @@ fn draw() void {
         });
     });
     const commands = clay.endLayout();
-    _restart_pressed = _pointer_pressed and clay.pointerOver(.ID("GameOverRestartButton"));
+    _restart_pressed = _pointer_pressed and clay.pointerOver(_restart_button_id);
+    if (_pointer_pressed) std.log.info("Click detected !", .{});
     clayh.renderCommands(commands);
 }

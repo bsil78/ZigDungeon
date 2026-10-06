@@ -1,41 +1,56 @@
 // #region Namespace imports
 const std = @import("std");
-const engine = @import("../../../engine/engine.zig");
+const libs = @import("../../../../libs/libs.zig");
+const globals = @import("../../../globals.zig");
+const engine = @import("../../../../engine/engine.zig");
 // #endregion
 
 // #region Concrete imports
-const GameWorld = @import("../../world.zig").GameWorld;
-const NPCActionPlan = @import("action_plan.zig").NPCActionPlan;
-const NPCAction = @import("action_plan.zig").NPCAction;
-const NPCState = @import("action_plan.zig").NPCState;
-const Entity = @import("../../entity.zig").Entity;
-const NPCEntityData = @import("npc_entity_data.zig").NPCEntityData;
+const Vector2 = libs.maths.geometry.vectors.Vector2;
+const Entity = @import("../../entity.zig");
+const NPCEntityData = @import("npc_entity_data.zig");
+const GameWorld = @import("../../../world.zig");
+const GameRandom = engine.core.random.GameRandom;
 // #endregion
 
-pub fn resolve(world: *GameWorld) !void {
-    const delta_time = engine.getFrameTime();
-    for (&world.entities) |*entity_opt| {
-        if (entity_opt.*) |*entity| {
-            const npc = entity.npcData() orelse continue;
-            try resolveNPCPlan(entity, npc, delta_time, world);
-            if (entity.health.isDead()) {
-                _ = world.destroyEntity(entity.id);
-            }
-        }
-    }
-}
+// All NPC possible actions
+pub const NPCAction = enum(u1) {
+    ChangeState = 0,
+    ApplyState = 1,
+};
 
-fn resolveNPCPlan(entity: *Entity, npc: *NPCEntityData, delta_seconds: f32, world: *GameWorld) !void {
+// All NPC possible states
+pub const NPCState = enum(u3) {
+    Idle = 0,
+    Wandering = 1,
+    Guarding = 2,
+    Chasing = 3,
+    Fleeing = 4,
+};
+
+// A plan may request a state change or provide an optional target cell for an
+// NPC action.
+pub const NPCActionPlan = struct {
+    action: NPCAction = NPCAction.ApplyState,
+    newState: ?NPCState = null,
+    target: ?@TypeOf(globals.WORLD_SIZE) = null,
+};
+
+pub fn resolve_plan(entity: *Entity, world: *GameWorld, delta_time: f32, rng: *GameRandom) !void {
+    var npc = entity.npcData();
     const plan = npc.action_plan orelse return;
 
     switch (plan.action) {
         .ChangeState => {
+            //std.log.info("Entity {d} change its state to {s}", .{ entity.id, @tagName(plan.newState.?) });
             npc.state = plan.newState.?;
             npc.action_plan = null;
             entity.movement_elapsed = 0.0;
             return;
         },
-        .ApplyState => {},
+        .ApplyState => {
+            //std.log.info("Entity {d} apply its state {s}", .{ entity.id, @tagName(npc.state) });
+        },
     }
     const movement_speed: ?f32 = switch (npc.state) {
         .Wandering, .Guarding => entity.normal_speed,
@@ -43,17 +58,7 @@ fn resolveNPCPlan(entity: *Entity, npc: *NPCEntityData, delta_seconds: f32, worl
         .Idle => null,
     };
     if (movement_speed) |speed| {
-        if (!std.math.isFinite(speed) or speed <= 0.0 or
-            !std.math.isFinite(entity.normal_speed) or entity.normal_speed <= 0.0 or
-            !std.math.isFinite(entity.max_speed) or entity.max_speed < entity.normal_speed)
-        {
-            return error.InvalidMovementSpeed;
-        }
-        if (!std.math.isFinite(delta_seconds) or delta_seconds < 0.0) {
-            return error.InvalidDeltaTime;
-        }
-
-        entity.movement_elapsed += delta_seconds;
+        entity.movement_elapsed += delta_time;
         const seconds_per_move = 1.0 / speed;
         if (entity.movement_elapsed < seconds_per_move) return;
         entity.movement_elapsed -= seconds_per_move;
@@ -61,7 +66,7 @@ fn resolveNPCPlan(entity: *Entity, npc: *NPCEntityData, delta_seconds: f32, worl
 
     switch (npc.state) {
         .Idle => {
-            if (try engine.random.nextU64() < 32) {
+            if (try rng.nextU64() < 32) {
                 npc.action_plan = .{ .action = NPCAction.ChangeState, .newState = NPCState.Wandering };
                 return;
             }

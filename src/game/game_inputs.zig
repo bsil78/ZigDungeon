@@ -40,24 +40,16 @@ pub fn mouseState() *const inputs.MouseState {
     return inputs.mouseState();
 }
 
-pub fn mousePosition() Vector2(f32) {
-    return inputs.mouseState().position;
-}
-
-pub fn mouseHotSpotPosition() Vector2(f32) {
-    return mousePosition().add(Vector2(f32).init(viewport.x, viewport.y));
+pub fn mouseGamePosition() Vector2(f32) {
+    return inputs.mouseState().position.add(Vector2(f32).init(viewport.x, viewport.y));
 }
 
 pub fn releaseMouseToOS() void {
     inputs.releaseMouse();
 }
 
-pub fn requestMouseCapture() void {
-    inputs.captureMouse();
-}
-
 pub fn poll() GameInputs {
-
+    inputs.poll(viewport);
     // Gamepad inputs
     const dpad_up = inputs.isGamepadButtonPressed(raylib.GAMEPAD_BUTTON_LEFT_FACE_UP, true);
     const dpad_down = inputs.isGamepadButtonPressed(raylib.GAMEPAD_BUTTON_LEFT_FACE_DOWN, true);
@@ -67,8 +59,8 @@ pub fn poll() GameInputs {
     const stick_down = inputs.isGamepadAxisPressed(raylib.GAMEPAD_AXIS_LEFT_Y, 1, true);
     const stick_left = inputs.isGamepadAxisPressed(raylib.GAMEPAD_AXIS_LEFT_X, -1, true);
     const stick_right = inputs.isGamepadAxisPressed(raylib.GAMEPAD_AXIS_LEFT_X, 1, true);
-    const gamepad_shoot = inputs.isGamepadButtonPressed(raylib.GAMEPAD_BUTTON_RIGHT_FACE_DOWN, true);
-    const gamepad_restart = inputs.isGamepadButtonPressed(raylib.GAMEPAD_BUTTON_MIDDLE_RIGHT, true);
+    const gamepad_shoot = inputs.isGamepadButtonPressed(raylib.GAMEPAD_BUTTON_RIGHT_FACE_DOWN, false);
+    const gamepad_restart = inputs.isGamepadButtonPressed(raylib.GAMEPAD_BUTTON_MIDDLE_RIGHT, false);
 
     // Keyboard inputs
     const keyboard_restart = inputs.isKeyPressed(raylib.KEY_R, false) or inputs.isKeyPressed(raylib.KEY_ENTER, false);
@@ -77,9 +69,7 @@ pub fn poll() GameInputs {
     const keyboard_move_down = inputs.isKeyPressed(raylib.KEY_DOWN, true);
     const keyboard_move_left = inputs.isKeyPressed(raylib.KEY_LEFT, true);
     const keyboard_move_right = inputs.isKeyPressed(raylib.KEY_RIGHT, true);
-
-    inputs.updateMouse(viewport);
-
+    
     return GameInputs{
         .move_up = keyboard_move_up or dpad_up or stick_up,
         .move_down = keyboard_move_down or dpad_down or stick_down,
