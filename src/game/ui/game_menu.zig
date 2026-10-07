@@ -13,32 +13,25 @@ const Vector2 = @import("../../libs/libs.zig").maths.geometry.vectors.Vector2;
 const SizedRenderable = @import("../game_types.zig").SizedRenderable;
 // #endregion
 
-const GameOver = @This();
+const GameMenu = @This();
 
 var _pointer_position: clay.Vector2 = .{ .x = 0, .y = 0 };
 var _pointer_down = false;
 var _pointer_pressed = false;
-var _restart_pressed = false;
-var _backmenu_pressed = false;
+var _start_pressed = false;
 
-var _restart_button_id: clay.ElementId = undefined;
-var _backmenu_button_id: clay.ElementId = undefined;
+var _start_button_id: clay.ElementId = undefined;
 
 pub fn init() void {
-    _restart_button_id = .ID("GameOverRestartButton");
-    _backmenu_button_id = .ID("BackToMenuButton");
+    _start_button_id = .ID("StartButton");
 }
 
 pub fn hide() void {
-    _restart_pressed = false;
+    _start_pressed = false;
 }
 
-pub fn restartButtonPressed() bool {
-    return _restart_pressed;
-}
-
-pub fn backToMenuButtonPressed() bool {
-    return _backmenu_pressed;
+pub fn startButtonPressed() bool {
+    return _start_pressed;
 }
 
 pub fn screen() SizedRenderable {
@@ -53,7 +46,7 @@ pub fn screen() SizedRenderable {
     return SizedRenderable{
         .renderingFn = struct {
             fn draw_go(_: *anyopaque) void {
-                GameOver.draw();
+                GameMenu.draw();
             }
         }.draw_go,
         .z_layer = @intFromEnum(Layers.GAME_OVER),
@@ -73,7 +66,7 @@ fn draw() void {
         .background_color = .{ 8, 10, 14, 205 },
     })({
         clay.UI()(.{
-            .id = .ID("GameOverPanel"),
+            .id = .ID("GameMenuPanel"),
             .layout = .{
                 .sizing = .{ .w = .fixed(440), .h = .fixed(250) },
                 .direction = .top_to_bottom,
@@ -84,18 +77,18 @@ fn draw() void {
             .background_color = .{ 30, 34, 42, 255 },
             .corner_radius = .all(6),
         })({
-            clay.text("GAME OVER", .{
+            clay.text("Zig Dungeon", .{
                 .font_size = 42,
-                .color = .{ 238, 84, 74, 255 },
+                .color = .{ 176, 84, 176, 255 },
                 .alignment = .center,
             });
-            clay.text("Your run has ended", .{
+            clay.text("A sandbox gaming project for improving Zig mastering", .{
                 .font_size = 20,
                 .color = .{ 220, 224, 230, 255 },
                 .alignment = .center,
             });
             clay.UI()(.{
-                .id = _restart_button_id,
+                .id = _start_button_id,
                 .layout = .{
                     .sizing = .{ .w = .fixed(240), .h = .fixed(54) },
                     .child_alignment = .center,
@@ -103,22 +96,7 @@ fn draw() void {
                 .background_color = if (clay.hovered()) .{ 92, 174, 118, 255 } else .{ 66, 139, 91, 255 },
                 .corner_radius = .all(4),
             })({
-                clay.text("RESTART RUN", .{
-                    .font_size = 22,
-                    .color = .{ 255, 255, 255, 255 },
-                    .alignment = .center,
-                });
-            });
-            clay.UI()(.{
-                .id = _backmenu_button_id,
-                .layout = .{
-                    .sizing = .{ .w = .fixed(240), .h = .fixed(54) },
-                    .child_alignment = .center,
-                },
-                .background_color = if (clay.hovered()) .{ 174, 84, 174, 255 } else .{ 128, 84, 128, 255 },
-                .corner_radius = .all(4),
-            })({
-                clay.text("BACK TO MENU", .{
+                clay.text("START RUN", .{
                     .font_size = 22,
                     .color = .{ 255, 255, 255, 255 },
                     .alignment = .center,
@@ -127,7 +105,6 @@ fn draw() void {
         });
     });
     const commands = clay.endLayout();
-    _restart_pressed = _pointer_pressed and clay.pointerOver(_restart_button_id);
-    _backmenu_pressed = _pointer_pressed and clay.pointerOver(_backmenu_button_id);
+    _start_pressed = _pointer_pressed and clay.pointerOver(_start_button_id);
     clayh.renderCommands(commands);
 }

@@ -112,7 +112,6 @@ pub fn TilesMap(comptime T: type, comptime S: anytype) type {
             const contextToUse = CONTEXT{ .tilesMap = self, .tilesSet = tilesSetInstance };
             const preparedContext = Renderable(MAX_CONTEXT_SIZE).contextCopy(CONTEXT, &contextToUse);
             return Renderable(MAX_CONTEXT_SIZE){
-                .id = 0,
                 .renderingFn = struct {
                     fn draw(ctx: *anyopaque) void {
                         //std.log.info("Rendering tilemap", .{});

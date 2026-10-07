@@ -18,23 +18,23 @@ const GameOver = @This();
 var _pointer_position: clay.Vector2 = .{ .x = 0, .y = 0 };
 var _pointer_down = false;
 var _pointer_pressed = false;
-var _restart_pressed = false;
+var _continue_pressed = false;
 var _backmenu_pressed = false;
 
-var _restart_button_id: clay.ElementId = undefined;
+var _continue_button_id: clay.ElementId = undefined;
 var _backmenu_button_id: clay.ElementId = undefined;
 
 pub fn init() void {
-    _restart_button_id = .ID("GameOverRestartButton");
+    _continue_button_id = .ID("ContinueButton");
     _backmenu_button_id = .ID("BackToMenuButton");
 }
 
 pub fn hide() void {
-    _restart_pressed = false;
+    _continue_pressed = false;
 }
 
-pub fn restartButtonPressed() bool {
-    return _restart_pressed;
+pub fn continueButtonPressed() bool {
+    return _continue_pressed;
 }
 
 pub fn backToMenuButtonPressed() bool {
@@ -84,18 +84,18 @@ fn draw() void {
             .background_color = .{ 30, 34, 42, 255 },
             .corner_radius = .all(6),
         })({
-            clay.text("GAME OVER", .{
+            clay.text("PAUSE MENU", .{
                 .font_size = 42,
-                .color = .{ 238, 84, 74, 255 },
+                .color = .{ 176, 84, 176, 255 },
                 .alignment = .center,
             });
-            clay.text("Your run has ended", .{
+            clay.text("Game is paused", .{
                 .font_size = 20,
                 .color = .{ 220, 224, 230, 255 },
                 .alignment = .center,
             });
             clay.UI()(.{
-                .id = _restart_button_id,
+                .id = _continue_button_id,
                 .layout = .{
                     .sizing = .{ .w = .fixed(240), .h = .fixed(54) },
                     .child_alignment = .center,
@@ -103,7 +103,7 @@ fn draw() void {
                 .background_color = if (clay.hovered()) .{ 92, 174, 118, 255 } else .{ 66, 139, 91, 255 },
                 .corner_radius = .all(4),
             })({
-                clay.text("RESTART RUN", .{
+                clay.text("CONTINUE", .{
                     .font_size = 22,
                     .color = .{ 255, 255, 255, 255 },
                     .alignment = .center,
@@ -127,7 +127,7 @@ fn draw() void {
         });
     });
     const commands = clay.endLayout();
-    _restart_pressed = _pointer_pressed and clay.pointerOver(_restart_button_id);
+    _continue_pressed = _pointer_pressed and clay.pointerOver(_continue_button_id);
     _backmenu_pressed = _pointer_pressed and clay.pointerOver(_backmenu_button_id);
     clayh.renderCommands(commands);
 }

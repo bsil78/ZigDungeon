@@ -21,11 +21,11 @@ pub const Inputs = struct {
 
     pub fn fromGameInput(game_input: GameInputs) Inputs {
         var inputs = Inputs{};
-        if (game_input.move_up) inputs.action |= @intFromEnum(Action.move_up);
-        if (game_input.move_left) inputs.action |= @intFromEnum(Action.move_left);
-        if (game_input.move_down) inputs.action |= @intFromEnum(Action.move_down);
-        if (game_input.move_right) inputs.action |= @intFromEnum(Action.move_right);
-        if (game_input.shoot) inputs.action |= @intFromEnum(Action.shoot);
+        if (game_input.move_up_action) inputs.action |= @intFromEnum(Action.move_up);
+        if (game_input.move_left_action) inputs.action |= @intFromEnum(Action.move_left);
+        if (game_input.move_down_action) inputs.action |= @intFromEnum(Action.move_down);
+        if (game_input.move_right_action) inputs.action |= @intFromEnum(Action.move_right);
+        if (game_input.shoot_action) inputs.action |= @intFromEnum(Action.shoot);
         return inputs;
     }
 

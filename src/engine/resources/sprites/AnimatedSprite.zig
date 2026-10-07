@@ -126,13 +126,11 @@ pub fn AnimatedSprite(
 
         pub fn renderable(
             self: *const Self,
-            entity_id: u16,
             visual_transform: Transform,
             z_layer: i16,
         ) SizedRenderable {
             const frame = self.currentFrame();
             return .{
-                .id = entity_id,
                 .renderingFn = SizedRenderable.drawTexture,
                 .renderingCtx = SizedRenderable.textureRegionContext(frame.texture, frame.source, visual_transform),
                 .z_layer = z_layer,

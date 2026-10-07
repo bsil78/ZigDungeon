@@ -15,3 +15,10 @@ pub const Layers = enum(i16) {
     GAME_OVER = 32766,
     MOUSE_POINTER = 32767,
 };
+
+pub const GameStates = enum {
+    GAME_MENU,
+    RUNNING,
+    PAUSE_MENU,
+    GAME_OVER,
+};

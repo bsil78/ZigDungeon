@@ -105,7 +105,6 @@ pub fn renderable(self: *const Entity) SizedRenderable {
     const visual_data = self.visual();
     const transform = self.transformForVisual(visual_data);
     return .{
-        .id = self.id,
         .renderingFn = SizedRenderable.drawTexture,
         .renderingCtx = if (visual_data.source) |source|
             SizedRenderable.textureRegionContext(visual_data.texture, source, transform)

@@ -31,7 +31,10 @@ pub fn Renderer(comptime QUEUE_SIZE: u16, comptime MAX_CONTEXT_SIZE: usize) type
         pub const RENDERABLE_CONTEXT_SIZE = MAX_CONTEXT_SIZE;
 
         pub fn init(renderer_settings: Settings, game_name: [:0]const u8) !Renderer(QUEUE_SIZE, MAX_CONTEXT_SIZE) {
-            raylib.InitWindow(@intCast(renderer_settings.window_size.x), @intCast(renderer_settings.window_size.y), @ptrCast(game_name.ptr));
+            raylib.InitWindow(  @intCast(renderer_settings.window_size.x), 
+                                @intCast(renderer_settings.window_size.y), 
+                                @ptrCast(game_name.ptr));
+            raylib.SetExitKey(raylib.KEY_F12);
             raylib.SetTargetFPS(@intCast(renderer_settings.target_fps));
             return Renderer(QUEUE_SIZE, MAX_CONTEXT_SIZE){
                 .settings = renderer_settings,

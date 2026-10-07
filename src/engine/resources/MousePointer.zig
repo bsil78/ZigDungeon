@@ -113,7 +113,7 @@ pub fn MousePointer(
             }
         }
 
-        pub fn renderable(self: *const Self, id: u16, mouse_position: Vector2(f32)) ?SizedRenderable {
+        pub fn renderable(self: *const Self, mouse_position: Vector2(f32)) ?SizedRenderable {
             const config = self.configurations[visualIndex(self.current_state).?];
             const transform = Transform{
                 .position = mouse_position
@@ -122,8 +122,8 @@ pub fn MousePointer(
             };
             return switch (config.visual) {
                 .hidden => null,
-                .sprite => |sprite| spriteRenderable(id, sprite, transform, config.z_layer),
-                .animated_sprite => |sprite| sprite.renderable(id, transform, config.z_layer),
+                .sprite => |sprite| spriteRenderable( sprite, transform, config.z_layer),
+                .animated_sprite => |sprite| sprite.renderable( transform, config.z_layer),
             };
         }
 
@@ -161,7 +161,7 @@ pub fn MousePointer(
             }
         }
 
-        fn spriteRenderable(id: u16, sprite: Sprite, transform: Transform, z_layer: i16) SizedRenderable {
+        fn spriteRenderable(sprite: Sprite, transform: Transform, z_layer: i16) SizedRenderable {
             const texture = sprite.texture;
             const source = Rect(f32).init(
                 0,
@@ -170,7 +170,6 @@ pub fn MousePointer(
                 @floatFromInt(texture.height),
             );
             return .{
-                .id = id,
                 .renderingFn = SizedRenderable.drawTexture,
                 .renderingCtx = SizedRenderable.textureRegionContext(texture, source, transform),
                 .z_layer = z_layer,

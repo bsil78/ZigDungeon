@@ -16,7 +16,6 @@ const Color = libs.gfx.Color;
 
 pub fn Renderable(comptime MAX_CONTEXT_SIZE: usize) type {
     return struct {
-        id: u16,
         renderingFn: *const fn (*anyopaque) void,
         renderingCtx: [MAX_CONTEXT_SIZE]u8 = undefined,
         z_layer: i16 = 0,
@@ -29,7 +28,7 @@ pub fn Renderable(comptime MAX_CONTEXT_SIZE: usize) type {
         };
 
         pub fn drawTexture(ctx: *anyopaque) void {
-            const dtc: *const DrawTextureContext = @ptrCast(@alignCast(ctx));
+            const dtc: DrawTextureContext = restoreContext(DrawTextureContext, ctx);
             const source = dtc.source orelse Rect(f32).init(
                 0,
                 0,

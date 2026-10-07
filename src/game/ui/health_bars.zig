@@ -87,10 +87,12 @@ fn computeRenderableHealthBar(health: Health, width: f32, visual_transform: rend
 
     const myctx = CONTEXT{ .health = health, .centerBottomPos = centerBottomPos, .style = style };
 
-    return SizedRenderable{ .id = 998, .renderingFn = struct {
-        fn draw(ctx: *anyopaque) void {
-            const context: *CONTEXT = @ptrCast(@alignCast(ctx));
-            drawHealthBar(context.health, context.centerBottomPos, context.style);
-        }
-    }.draw, .renderingCtx = SizedRenderable.contextCopy(CONTEXT, &myctx), .z_layer = z_layer };
+    return SizedRenderable{ 
+        .renderingFn = struct {
+            fn draw(ctx: *anyopaque) void {
+                const context: CONTEXT = SizedRenderable.restoreContext(CONTEXT,ctx);
+                drawHealthBar(context.health, context.centerBottomPos, context.style);
+            }
+        }.draw, 
+        .renderingCtx = SizedRenderable.contextCopy(CONTEXT, &myctx), .z_layer = z_layer };
 }

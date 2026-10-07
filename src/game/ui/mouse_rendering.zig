@@ -36,5 +36,5 @@ pub fn resetPointer() void {
 pub fn getRenderable(activeVisual: MouseVisual, mouse_position: Vector2(f32)) !?SizedRenderable {
     try pointer.setVisual(activeVisual);
     pointer.updateAnimation();
-    return pointer.renderable(std.math.maxInt(u16), mouse_position);
+    return pointer.renderable(mouse_position);
 }

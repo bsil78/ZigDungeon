@@ -63,12 +63,8 @@ pub fn Instance(comptime MAX_RENDERABLES: u16, comptime MAX_CONTEXT_SIZE: usize)
             self.renderer.clearRenderingQueue();
         }
 
-        pub fn gameRunningTime(self: *EngineInstance) i64 {
-            return Timer.getNs() - self._program_start_timestamp;
-        }
-
         pub fn processTime(self: *EngineInstance) f32 {
-            return @as(f32, @floatFromInt(self.timer.startTime - Timer.getNs())) / 1000.0;
+            return @as(f32, @floatFromInt(Timer.getNs() - self.timer.startTime)) / 1000.0;
         }
     };
 }
